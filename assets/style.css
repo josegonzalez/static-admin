@@ -1,0 +1,19 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+
+.form-container {
+    margin-bottom: 20px;
+}
+
+.editor-container {
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.submit-button {
+    margin-top: 20px;
+}

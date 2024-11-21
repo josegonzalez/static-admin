@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EditorJS Page Editor</title>
+  <link rel="stylesheet" href="/static/assets/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet">
+</head>
+<body>
+  <h1>Edit Page</h1>
+  <div class="form-container">
+    <form id="dynamic-form"></form>
+  </div>
+  <div class="editor-container" id="editorjs"></div>
+  <button id="submit-button" class="submit-button">Save</button>
+
+  <!-- Injected Data -->
+  <script>
+    const FRONTMATTER_DATA = {{.Frontmatter}} || {};
+    const BLOCKS_DATA = {{.Blocks}};
+  </script>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@coolbytes/editorjs-delimiter@1.0.3/dist/bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/raw@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/table@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/code@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/editorjs-alert@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
+  <script src="/static/assets/script.js"></script>
+</body>
+</html>
