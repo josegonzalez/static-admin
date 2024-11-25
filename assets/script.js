@@ -4,6 +4,7 @@ function generateDynamicForm(frontmatter) {
   form.innerHTML = ""; // Clear existing form content
 
   Object.entries(frontmatter).forEach(([key, value]) => {
+    console.log(key, value);
     const label = document.createElement("label");
     label.textContent = key.charAt(0).toUpperCase() + key.slice(1);
     label.setAttribute("for", key);
@@ -33,6 +34,7 @@ function generateDynamicForm(frontmatter) {
       select.name = key;
       select.id = key;
       select.setAttribute("multiple", "multiple");
+      select.style.width = "100%";
       value.forEach((item) => {
         const option = document.createElement("option");
         option.value = item;
@@ -58,6 +60,7 @@ function generateDynamicForm(frontmatter) {
       $(input).select2({
         tags: true,
         tokenSeparators: [",", " "],
+        width: "resolve",
       });
     }
   });

@@ -1,1 +1,3 @@
 static-admin
+.env
+*.db

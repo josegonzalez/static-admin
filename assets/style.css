@@ -17,3 +17,32 @@ body {
 .submit-button {
     margin-top: 20px;
 }
+
+/* Alert styling */
+.alert {
+    color: red;
+    margin-bottom: 15px;
+}
+
+/* Register and Login link styling */
+.register-link,
+.login-link {
+    margin-top: 15px;
+    display: block;
+    text-align: center;
+}
+
+/* Github redirect button styling */
+.redirect-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #4285F4;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.redirect-button:hover {
+    background-color: #357ae8;
+}
