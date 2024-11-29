@@ -170,22 +170,14 @@ export default function EditPostPage() {
 
   return (
     <>
+      <h1 className="text-3xl font-bold mb-0 space-y-0">Edit Post</h1>
+      <p className="text-xs mt-0 pt-0 space-y-0 text-gray-500">id: {post.id}</p>
+      <p className="text-xs mt-0 pt-0 space-y-0 text-gray-500">
+        path: {post.path}
+      </p>
+      <hr className="my-4" />
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Edit Post</h1>
-        </div>
-
         <div className="space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold">Post ID</h2>
-            <p className="font-mono">{post.id}</p>
-          </div>
-
-          <div>
-            <h2 className="text-lg font-semibold">Site</h2>
-            <p>{siteName}</p>
-          </div>
-
           <form onSubmit={handleSubmitForm(handleSubmit)} className="space-y-8">
             <div className="space-y-4">
               {Object.values(post.frontmatter).map((field) => {
