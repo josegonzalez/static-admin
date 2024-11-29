@@ -17,7 +17,6 @@ import (
 	"static-admin/handlers"
 	api_handlers "static-admin/handlers/api"
 	auth_handlers "static-admin/handlers/auth"
-	"static-admin/markdown"
 	"static-admin/middleware"
 
 	"github.com/gin-contrib/cors"
@@ -122,33 +121,8 @@ func main() {
 	registry.ApiRegister(api_handlers.NewDeleteSiteHandler(config))
 	registry.ApiRegister(api_handlers.NewCreateSiteHandler(config))
 	registry.ApiRegister(api_handlers.NewGitHubRepositoriesHandler(config))
-
-	// registry.AuthRegister(auth_handlers.NewEditorHandler(config))
-	// registry.AuthRegister(auth_handlers.NewDashboardHandler(config))
-	// registry.AuthRegister(auth_handlers.NewConfigurationHandler(config))
-	// registry.AuthRegister(auth_handlers.NewPostsHandler(config))
-
-	// render the blocks json
-	r.GET("/blocks", func(c *gin.Context) {
-		source, err := staticFiles.ReadFile("assets/example.md")
-		if err != nil {
-			c.String(http.StatusInternalServerError, "Failed to read example.md: %s", err.Error())
-			return
-		}
-
-		_, content, err := markdown.ExtractFrontMatter([]byte(source))
-		if err != nil {
-			c.String(http.StatusInternalServerError, "Failed to extract frontmatter: %s", err.Error())
-			return
-		}
-		blocks, err := markdown.ParseMarkdownToBlocks(content)
-		if err != nil {
-			c.String(http.StatusInternalServerError, "Failed to parse markdown: %s", err.Error())
-			return
-		}
-
-		c.JSON(http.StatusOK, blocks)
-	})
+	registry.ApiRegister(api_handlers.NewPostsHandler(config))
+	registry.ApiRegister(api_handlers.NewPostHandler(config))
 
 	server := &http.Server{
 		Addr:    ":8080",

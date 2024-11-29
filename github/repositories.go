@@ -128,9 +128,13 @@ func FetchOrgRepositories(input FetchOrgRepositoriesInput) ([]Repository, error)
 			return nil, fmt.Errorf("API request failed: %s (status: %d)", string(body), resp.StatusCode)
 		}
 
-		// Parse the JSON response
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %v", err)
+		}
+
 		var repos []Repository
-		if err := json.NewDecoder(resp.Body).Decode(&repos); err != nil {
+		if err := json.Unmarshal(body, &repos); err != nil {
 			return nil, fmt.Errorf("failed to parse response: %v", err)
 		}
 		allRepos = append(allRepos, repos...)
@@ -203,9 +207,13 @@ func FetchUserRepositories(input FetchUserRepositoriesInput) ([]Repository, erro
 			return nil, fmt.Errorf("API request failed: %s (status: %d)", string(body), resp.StatusCode)
 		}
 
-		// Parse the JSON response
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %v", err)
+		}
+
 		var repos []Repository
-		if err := json.NewDecoder(resp.Body).Decode(&repos); err != nil {
+		if err := json.Unmarshal(body, &repos); err != nil {
 			return nil, fmt.Errorf("failed to parse response: %v", err)
 		}
 		allRepos = append(allRepos, repos...)

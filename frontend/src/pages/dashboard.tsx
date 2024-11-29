@@ -32,7 +32,6 @@ export default function DashboardPage() {
           setGithubAuthUrl(url);
         }
       } catch (err) {
-        console.error("Auth check failed:", err);
         localStorage.removeItem("token");
         router.push("/login");
         return;

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"static-admin/config"
 	"static-admin/database"
+	"static-admin/github"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -93,6 +94,13 @@ func (h CreateSiteHandler) handler(c *gin.Context) {
 		})
 		return
 	}
+	var githubAuth database.GitHubAuth
+	if err := h.Database.Where("user_id = ?", uint(userID)).First(&githubAuth).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "GitHub authentication required",
+		})
+		return
+	}
 
 	// Check if site already exists
 	var existingSite database.Site
@@ -109,13 +117,25 @@ func (h CreateSiteHandler) handler(c *gin.Context) {
 		return
 	}
 
+	// fetch repository info
+	repo, err := github.FetchRepository(github.FetchRepositoryInput{
+		RepositoryURL: req.RepositoryURL,
+		Token:         githubAuth.AccessToken,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to fetch repository",
+		})
+		return
+	}
+
 	// Create new site
 	site := database.Site{
 		UserID:        uint(userID),
-		RepositoryURL: req.RepositoryURL,
-		Description:   req.Description,
-		DefaultBranch: req.DefaultBranch,
-		Private:       req.Private,
+		RepositoryURL: repo.HtmlURL,
+		Description:   repo.Description,
+		DefaultBranch: repo.DefaultBranch,
+		Private:       repo.Private,
 	}
 
 	if err := h.Database.Create(&site).Error; err != nil {

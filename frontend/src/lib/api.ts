@@ -1,3 +1,6 @@
+import { Post } from "@/types/post";
+import { Site } from "@/types/site";
+
 const API_BASE = "http://localhost:8080";
 
 interface LoginResponse {
@@ -10,15 +13,6 @@ interface GitHubAuthURLResponse {
 
 interface TokenResponse {
   token: string;
-}
-
-interface Site {
-  id: number;
-  default_branch: string;
-  description: string;
-  name: string;
-  private: boolean;
-  url: string;
 }
 
 interface Organization {
@@ -144,4 +138,14 @@ export async function deleteSite(id: number): Promise<void> {
   if (!response.ok) {
     throw new Error("Failed to delete site");
   }
+}
+
+export async function getPosts(siteId: string): Promise<Post[]> {
+  const response = await fetchWithAuth(`/api/sites/${siteId}/posts`);
+  return response.json();
+}
+
+export async function getPost(siteId: string, postId: string): Promise<Post> {
+  const response = await fetchWithAuth(`/api/sites/${siteId}/posts/${postId}`);
+  return response.json();
 }

@@ -26,6 +26,7 @@ import {
   getGitHubRepositories,
   getSites,
 } from "@/lib/api";
+import { Site } from "@/types/site";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
@@ -44,15 +45,6 @@ interface Repository {
   private: boolean;
   owner: string;
   default_branch: string;
-}
-
-interface Site {
-  id: number;
-  default_branch: string;
-  description: string;
-  name: string;
-  private: boolean;
-  url: string;
 }
 
 export default function SitesPage() {

@@ -3,17 +3,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/layouts/dashboard-layout";
 import { deleteSite, getSites } from "@/lib/api";
+import { Site } from "@/types/site";
 import { AlertCircle } from "lucide-react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-interface Site {
-  id: number;
-  default_branch: string;
-  description: string;
-  name: string;
-  private: boolean;
-  url: string;
-}
 
 export default function ConfigurationPage() {
   const router = useRouter();

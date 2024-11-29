@@ -48,7 +48,6 @@ func (h GithubCallbackHandler) handler(c *gin.Context) {
 	// Check for JWT token in session
 	tokenString := c.Query("state")
 	if tokenString == "" {
-		println("no token in session")
 		h.clearSession(c)
 		c.Redirect(http.StatusFound, "/login")
 		return
@@ -59,7 +58,6 @@ func (h GithubCallbackHandler) handler(c *gin.Context) {
 		return h.JWTSecret, nil
 	})
 	if err != nil || !token.Valid {
-		println("invalid token")
 		h.clearSession(c)
 		c.Redirect(http.StatusFound, "/login")
 		return

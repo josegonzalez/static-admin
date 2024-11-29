@@ -27,8 +27,8 @@ type DeleteSiteHandler struct {
 
 // GroupRegister registers the handler with the given router group
 func (h DeleteSiteHandler) GroupRegister(r *gin.RouterGroup) {
-	r.DELETE("/sites/:id", h.handler)
-	r.OPTIONS("/sites/:id", func(c *gin.Context) {
+	r.DELETE("/sites/:siteId", h.handler)
+	r.OPTIONS("/sites/:siteId", func(c *gin.Context) {
 		c.Status(http.StatusNoContent)
 	})
 }
@@ -74,7 +74,7 @@ func (h DeleteSiteHandler) handler(c *gin.Context) {
 	}
 
 	// Delete site (only if it belongs to the user)
-	result := h.Database.Where("id = ? AND user_id = ?", c.Param("id"), uint(userID)).Delete(&database.Site{})
+	result := h.Database.Where("id = ? AND user_id = ?", c.Param("siteId"), uint(userID)).Delete(&database.Site{})
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to delete site",

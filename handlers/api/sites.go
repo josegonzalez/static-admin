@@ -14,7 +14,12 @@ import (
 // SiteResponse represents a site in the JSON response
 type SiteResponse struct {
 	ID            uint   `json:"id"`
+	UserID        uint   `json:"user_id"`
 	RepositoryURL string `json:"url"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	DefaultBranch string `json:"default_branch"`
+	Private       bool   `json:"private"`
 }
 
 // NewSitesHandler creates a new handler for the sites endpoint
@@ -91,9 +96,16 @@ func (h SitesHandler) handler(c *gin.Context) {
 	// Convert to response format
 	response := make([]SiteResponse, len(sites))
 	for i, site := range sites {
+		parts := strings.Split(site.RepositoryURL, "/")
+		repositoryName := parts[len(parts)-1]
 		response[i] = SiteResponse{
 			ID:            site.ID,
+			UserID:        site.UserID,
 			RepositoryURL: site.RepositoryURL,
+			Name:          repositoryName,
+			Description:   site.Description,
+			DefaultBranch: site.DefaultBranch,
+			Private:       site.Private,
 		}
 	}
 

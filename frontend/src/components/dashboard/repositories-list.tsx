@@ -5,17 +5,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Site } from "@/types/site";
+import { Lock, Unlock } from "lucide-react";
 import Link from "next/link";
 import { Button } from "../ui/button";
 
-interface Repository {
-  id: number;
-  name: string;
-  url: string;
-}
-
 interface RepositoriesListProps {
-  repositories: Repository[];
+  repositories: Site[];
   onDelete?: (id: number) => void;
 }
 
@@ -32,32 +28,54 @@ export function RepositoriesList({
             <CardDescription>Site ID: {repository.id}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <div className="mb-2 grid items-start last:mb-0 last:pb-0">
-              <div className="space-y-1">
-                <p className="text-sm font-medium leading-none">
-                  Repository Link
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  <Link href={repository.url}>Github</Link>
-                </p>
-              </div>
-            </div>
+            <dl className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2">
+              <dt className="text-sm font-medium text-muted-foreground">
+                Repository
+              </dt>
+              <dd className="text-sm">
+                <Link
+                  href={repository.url}
+                  className="text-blue-500 hover:underline"
+                >
+                  GitHub
+                </Link>
+              </dd>
+
+              <dt className="text-sm font-medium text-muted-foreground">
+                Description
+              </dt>
+              <dd className="text-sm">{repository.description}</dd>
+
+              <dt className="text-sm font-medium text-muted-foreground">
+                Visibility
+              </dt>
+              <dd className="text-sm flex items-center gap-1">
+                {repository.private ? (
+                  <>
+                    <Lock className="h-4 w-4" /> Private
+                  </>
+                ) : (
+                  <>
+                    <Unlock className="h-4 w-4" /> Public
+                  </>
+                )}
+              </dd>
+
+              <dt className="text-sm font-medium text-muted-foreground">
+                Branch
+              </dt>
+              <dd className="text-sm">{repository.default_branch}</dd>
+            </dl>
+
             {onDelete && (
-              <div className="mb-2 grid items-start last:mb-0 last:pb-0">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium leading-none">
-                    Delete this?
-                  </p>
-                  <p className="text-sm">
-                    <Button
-                      onClick={() => onDelete(repository.id)}
-                      className="bg-red-500 hover:text-red-700"
-                      aria-label={`Delete ${repository.name}`}
-                    >
-                      Delete
-                    </Button>
-                  </p>
-                </div>
+              <div className="pt-4">
+                <Button
+                  onClick={() => onDelete(repository.id)}
+                  className="bg-red-500 hover:text-red-700"
+                  aria-label={`Delete ${repository.name}`}
+                >
+                  Delete
+                </Button>
               </div>
             )}
           </CardContent>
