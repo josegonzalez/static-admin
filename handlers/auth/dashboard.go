@@ -24,15 +24,15 @@ type DashboardHandler struct {
 	Database *gorm.DB
 }
 
-// AuthRegister registers the handler with the given router
-func (h DashboardHandler) AuthRegister(auth *gin.RouterGroup) {
+// GroupRegister registers the handler with the given router
+func (h DashboardHandler) GroupRegister(auth *gin.RouterGroup) {
 	auth.GET("/dashboard", h.handler)
 }
 
 // handler handles the request for the page
 func (h DashboardHandler) handler(c *gin.Context) {
 	context := session.PageContext(c, nil)
-	context["githubRedirectURL"] = middleware.GetLoginURL(c)
+	context["githubRedirectURL"] = middleware.GetLoginURL(c, "")
 
 	if user, ok := c.Get("githubUser"); ok {
 		githubUser := user.(middleware.GithubUser)

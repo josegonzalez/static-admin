@@ -57,8 +57,8 @@ type EditorHandler struct {
 	Template *template.Template
 }
 
-// Register registers the handler with the given router
-func (h EditorHandler) AuthRegister(auth *gin.RouterGroup) {
+// GroupRegister registers the handler with the given router
+func (h EditorHandler) GroupRegister(auth *gin.RouterGroup) {
 	auth.GET("/editor", h.handler)
 }
 

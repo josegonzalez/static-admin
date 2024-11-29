@@ -6,7 +6,52 @@ import (
 	"io"
 	"net/http"
 	"sort"
+	"sync"
+	"time"
 )
+
+// Cache configuration
+const cacheDuration = 5 * time.Minute
+
+// Cache entry with expiration
+type cacheEntry struct {
+	data       interface{}
+	expiration time.Time
+}
+
+var (
+	cache     = make(map[string]cacheEntry)
+	cacheLock sync.RWMutex
+)
+
+// getCached retrieves data from cache if available and not expired
+func getCached(key string) (interface{}, bool) {
+	cacheLock.RLock()
+	defer cacheLock.RUnlock()
+
+	entry, exists := cache[key]
+	if !exists {
+		return nil, false
+	}
+
+	if time.Now().After(entry.expiration) {
+		delete(cache, key)
+		return nil, false
+	}
+
+	return entry.data, true
+}
+
+// setCache stores data in cache with expiration
+func setCache(key string, data interface{}) {
+	cacheLock.Lock()
+	defer cacheLock.Unlock()
+
+	cache[key] = cacheEntry{
+		data:       data,
+		expiration: time.Now().Add(cacheDuration),
+	}
+}
 
 // Repository represents the structure of a repository from the GitHub API response
 type Repository struct {
@@ -14,6 +59,7 @@ type Repository struct {
 	Description   string `json:"description"`
 	Private       bool   `json:"private"`
 	Url           string `json:"url"`
+	HtmlURL       string `json:"html_url"`
 	DefaultBranch string `json:"default_branch"`
 }
 
@@ -24,6 +70,14 @@ type FetchOrgRepositoriesInput struct {
 
 	// Token is the GitHub personal access token to use for authentication
 	Token string
+
+	// UserID is the ID of the currently logged in user
+	UserID uint
+}
+
+// Helper function to generate cache keys
+func generateCacheKey(userID uint, url string) string {
+	return fmt.Sprintf("user:%d:%s", userID, url)
 }
 
 // FetchOrgRepositories fetches all repositories within a given organization, handling pagination
@@ -33,6 +87,12 @@ func FetchOrgRepositories(input FetchOrgRepositoriesInput) ([]Repository, error)
 	}
 
 	baseURL := fmt.Sprintf("https://api.github.com/orgs/%s/repos", input.Organization)
+	cacheKey := generateCacheKey(input.UserID, baseURL)
+
+	// Check cache first
+	if cached, ok := getCached(cacheKey); ok {
+		return cached.([]Repository), nil
+	}
 
 	var allRepos []Repository
 	url := baseURL
@@ -86,13 +146,27 @@ func FetchOrgRepositories(input FetchOrgRepositoriesInput) ([]Repository, error)
 		return allRepos[i].Name < allRepos[j].Name
 	})
 
+	// Cache the result before returning
+	setCache(cacheKey, allRepos)
+
 	return allRepos, nil
 }
 
+type FetchUserRepositoriesInput struct {
+	Token    string
+	Username string
+	UserID   uint
+}
+
 // FetchUserRepositories fetches all repositories for the authenticated user, handling pagination.
-func FetchUserRepositories(token string) ([]Repository, error) {
-	// Initial API endpoint
-	baseURL := "https://api.github.com/user/repos"
+func FetchUserRepositories(input FetchUserRepositoriesInput) ([]Repository, error) {
+	baseURL := "https://api.github.com/users/" + input.Username + "/repos"
+	cacheKey := generateCacheKey(input.UserID, baseURL)
+
+	// Check cache first
+	if cached, ok := getCached(cacheKey); ok {
+		return cached.([]Repository), nil
+	}
 
 	var allRepos []Repository
 	url := baseURL
@@ -105,10 +179,10 @@ func FetchUserRepositories(token string) ([]Repository, error) {
 		}
 
 		// Add authentication header
-		if token == "" {
+		if input.Token == "" {
 			return nil, fmt.Errorf("authentication token is required")
 		}
-		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Authorization", "Bearer "+input.Token)
 
 		// add per_page=100 to the query string
 		q := req.URL.Query()
@@ -147,5 +221,31 @@ func FetchUserRepositories(token string) ([]Repository, error) {
 		return allRepos[i].Name < allRepos[j].Name
 	})
 
+	// Cache the result before returning
+	setCache(cacheKey, allRepos)
+
 	return allRepos, nil
+}
+
+// StartCacheCleaner starts a goroutine to periodically clean expired cache entries
+func StartCacheCleaner(quit chan struct{}) {
+	ticker := time.NewTicker(time.Minute)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				cacheLock.Lock()
+				now := time.Now()
+				for key, entry := range cache {
+					if now.After(entry.expiration) {
+						delete(cache, key)
+					}
+				}
+				cacheLock.Unlock()
+			case <-quit:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
 }

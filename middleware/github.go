@@ -1,15 +1,12 @@
 package middleware
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/gob"
 
 	"static-admin/config"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/golang/glog"
 	zgithub "github.com/zalando/gin-oauth2/github"
 	"golang.org/x/oauth2"
 	oauth2gh "golang.org/x/oauth2/github"
@@ -33,20 +30,8 @@ func Github(config config.Config) {
 	}
 }
 
-func GetLoginURL(c *gin.Context) string {
-	state := randToken()
-	session := sessions.Default(c)
-	session.Set("state", state)
-	_ = session.Save()
+func GetLoginURL(c *gin.Context, state string) string {
 	return GithubConfig.AuthCodeURL(state)
-}
-
-func randToken() string {
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		glog.Fatalf("[Gin-OAuth] Failed to read rand: %v\n", err)
-	}
-	return base64.StdEncoding.EncodeToString(b)
 }
 
 type GithubUser struct {

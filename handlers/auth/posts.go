@@ -24,8 +24,8 @@ type PostsHandler struct {
 	Database *gorm.DB
 }
 
-// AuthRegister registers the handler with the given router
-func (h PostsHandler) AuthRegister(auth *gin.RouterGroup) {
+// GroupRegister registers the handler with the given router
+func (h PostsHandler) GroupRegister(auth *gin.RouterGroup) {
 	auth.GET("/posts", h.handler)
 }
 
@@ -50,7 +50,7 @@ func (h PostsHandler) handler(c *gin.Context) {
 	}
 
 	context := session.PageContext(c, nil)
-	context["githubRedirectURL"] = middleware.GetLoginURL(c)
+	context["githubRedirectURL"] = middleware.GetLoginURL(c, "")
 	context["organization"] = organization
 	context["repository"] = repository
 	context["branch"] = branch

@@ -15,14 +15,14 @@ func Initialize() (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	// AutoMigrate the schema
-	err = db.AutoMigrate(&User{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to migrate database: %w", err)
+	models := []interface{}{
+		&User{},
+		&GitHubAuth{},
+		&Site{},
 	}
 
-	err = db.AutoMigrate(&GitHubProfile{})
-	if err != nil {
+	// AutoMigrate the schema
+	if err := db.AutoMigrate(models...); err != nil {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
 

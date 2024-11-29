@@ -75,5 +75,5 @@ func (h RegisterHandler) handler(c *gin.Context) {
 	}
 
 	// Redirect after successful registration
-	c.Redirect(http.StatusFound, "/login")
+	c.Redirect(http.StatusCreated, "/login")
 }

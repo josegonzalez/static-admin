@@ -6,34 +6,74 @@ import (
 	"net/http"
 
 	"static-admin/config"
+	"static-admin/database"
 	"static-admin/middleware"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	"github.com/golang/glog"
 	"github.com/google/go-github/github"
+	"gorm.io/gorm"
 )
 
 // NewGithubCallbackHandler creates a new handler for the github callback page
 func NewGithubCallbackHandler(config config.Config) (GithubCallbackHandler, error) {
-	return GithubCallbackHandler{}, nil
+	return GithubCallbackHandler{
+		JWTSecret: []byte(config.JWTSecret),
+		Database:  config.Database,
+	}, nil
 }
 
 // GithubCallbackHandler handles the github callback request
-type GithubCallbackHandler struct{}
+type GithubCallbackHandler struct {
+	JWTSecret []byte
+	Database  *gorm.DB
+}
 
-// AuthRegister registers the handler with the given router
-func (h GithubCallbackHandler) AuthRegister(auth *gin.RouterGroup) {
+// GroupRegister registers the handler with the given router
+func (h GithubCallbackHandler) GroupRegister(auth *gin.RouterGroup) {
 	auth.GET("/auth/github/callback", h.handler)
+}
+
+func (h GithubCallbackHandler) clearSession(c *gin.Context) {
+	session := sessions.Default(c)
+	session.Clear()
+	_ = session.Save()
+	c.SetCookie("jwt", "", -1, "/", "", false, true)
 }
 
 // handler handles the request for the page
 func (h GithubCallbackHandler) handler(c *gin.Context) {
-	session := sessions.Default(c)
+	// Check for JWT token in session
+	tokenString := c.Query("state")
+	if tokenString == "" {
+		println("no token in session")
+		h.clearSession(c)
+		c.Redirect(http.StatusFound, "/login")
+		return
+	}
 
-	retrievedState := session.Get("state")
-	if retrievedState != c.Query("state") {
-		_ = c.AbortWithError(http.StatusUnauthorized, fmt.Errorf("invalid session state: %s", retrievedState))
+	// Validate JWT token and extract user ID
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return h.JWTSecret, nil
+	})
+	if err != nil || !token.Valid {
+		println("invalid token")
+		h.clearSession(c)
+		c.Redirect(http.StatusFound, "/login")
+		return
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		_ = c.AbortWithError(http.StatusInternalServerError, fmt.Errorf("invalid token claims"))
+		return
+	}
+
+	userID, ok := claims["user_id"].(float64)
+	if !ok {
+		_ = c.AbortWithError(http.StatusInternalServerError, fmt.Errorf("invalid user_id in token"))
 		return
 	}
 
@@ -51,23 +91,23 @@ func (h GithubCallbackHandler) handler(c *gin.Context) {
 		return
 	}
 
-	// Protection: fields used in userinfo might be nil-pointers
-	githubUser := middleware.GithubUser{
+	// Update or create GitHub auth record in database
+	githubAuth := database.GitHubAuth{
+		UserID:      uint(userID),
 		Login:       stringFromPointer(user.Login),
 		Name:        stringFromPointer(user.Name),
 		URL:         stringFromPointer(user.URL),
 		AccessToken: tok.AccessToken,
 	}
 
-	// save userinfo, which could be used in Handlers
-	c.Set("githubUser", githubUser)
-
-	// populate cookie
-	session.Set("ginoauthgh", githubUser)
-	if err := session.Save(); err != nil {
-		glog.Errorf("Failed to save session: %v", err)
+	result := h.Database.Where("user_id = ?", uint(userID)).FirstOrCreate(&githubAuth)
+	if result.Error != nil {
+		glog.Errorf("Failed to save GitHub auth: %v", result.Error)
+		_ = c.AbortWithError(http.StatusInternalServerError, fmt.Errorf("failed to save auth data"))
+		return
 	}
-	c.Redirect(http.StatusFound, "/dashboard")
+
+	c.Redirect(http.StatusFound, "http://localhost:3000/dashboard?refetch-token=true")
 }
 
 func stringFromPointer(strPtr *string) (res string) {

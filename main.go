@@ -13,11 +13,14 @@ import (
 
 	"static-admin/config"
 	"static-admin/database"
+	"static-admin/github"
 	"static-admin/handlers"
+	api_handlers "static-admin/handlers/api"
 	auth_handlers "static-admin/handlers/auth"
 	"static-admin/markdown"
 	"static-admin/middleware"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,12 +32,13 @@ type Handler interface {
 }
 
 type AuthHandler interface {
-	AuthRegister(r *gin.RouterGroup)
+	GroupRegister(r *gin.RouterGroup)
 }
 
 type Registry struct {
 	Engine    *gin.Engine
 	AuthGroup *gin.RouterGroup
+	ApiGroup  *gin.RouterGroup
 }
 
 func (r *Registry) Register(handler Handler, err error) {
@@ -45,12 +49,20 @@ func (r *Registry) Register(handler Handler, err error) {
 	handler.Register(r.Engine)
 }
 
+func (r *Registry) ApiRegister(handler AuthHandler, err error) {
+	if err != nil {
+		log.Fatalf("Failed to create auth handler: %v", err)
+	}
+
+	handler.GroupRegister(r.ApiGroup)
+}
+
 func (r *Registry) AuthRegister(handler AuthHandler, err error) {
 	if err != nil {
 		log.Fatalf("Failed to create auth handler: %v", err)
 	}
 
-	handler.AuthRegister(r.AuthGroup)
+	handler.GroupRegister(r.AuthGroup)
 }
 
 func main() {
@@ -67,6 +79,7 @@ func main() {
 
 	// Create a quit channel to signal the cache cleaner
 	quit := make(chan struct{})
+	github.StartCacheCleaner(quit)
 
 	config := config.NewConfig(db, staticFiles)
 	middleware.Github(config)
@@ -78,19 +91,42 @@ func main() {
 	r.SetHTMLTemplate(template.Must(template.ParseFS(staticFiles, "assets/*.html")))
 	r.StaticFS("/static", http.FS(staticFiles))
 
+	apiUnauthenticated := r.Group("/api")
+	apiUnauthenticated.Use(cors.New(cors.Config{
+		AllowOrigins: []string{
+			"http://localhost:3000",
+			"http://localhost:8080",
+		}, // Frontend URL
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
 	auth := r.Group("/")
-	auth.Use(middleware.Auth(db, []byte(config.JWTSecret)))
-	registry := &Registry{Engine: r, AuthGroup: auth}
+	// auth.Use(middleware.Auth(db, []byte(config.JWTSecret)))
+
+	registry := &Registry{Engine: r, AuthGroup: auth, ApiGroup: apiUnauthenticated}
 
 	registry.Register(handlers.NewLoginHandler(config))
 	registry.Register(handlers.NewRegisterHandler(config))
 
-	registry.AuthRegister(auth_handlers.NewEditorHandler(config))
 	registry.AuthRegister(auth_handlers.NewGithubCallbackHandler(config))
-	registry.AuthRegister(auth_handlers.NewDashboardHandler(config))
-	registry.AuthRegister(auth_handlers.NewRepositoriesHandler(config))
-	registry.AuthRegister(auth_handlers.NewConfigurationHandler(config))
-	registry.AuthRegister(auth_handlers.NewPostsHandler(config))
+	registry.ApiRegister(api_handlers.NewLoginHandler(config))
+	registry.ApiRegister(api_handlers.NewCreateAccountHandler(config))
+	registry.ApiRegister(api_handlers.NewGitHubAuthURLHandler(config))
+	registry.ApiRegister(api_handlers.NewRevalidateHandler(config))
+	registry.ApiRegister(api_handlers.NewGitHubOrganizationsHandler(config))
+	registry.ApiRegister(api_handlers.NewSitesHandler(config))
+	registry.ApiRegister(api_handlers.NewDeleteSiteHandler(config))
+	registry.ApiRegister(api_handlers.NewCreateSiteHandler(config))
+	registry.ApiRegister(api_handlers.NewGitHubRepositoriesHandler(config))
+
+	// registry.AuthRegister(auth_handlers.NewEditorHandler(config))
+	// registry.AuthRegister(auth_handlers.NewDashboardHandler(config))
+	// registry.AuthRegister(auth_handlers.NewConfigurationHandler(config))
+	// registry.AuthRegister(auth_handlers.NewPostsHandler(config))
 
 	// render the blocks json
 	r.GET("/blocks", func(c *gin.Context) {

@@ -21,8 +21,8 @@ type ConfigurationHandler struct {
 	Database *gorm.DB
 }
 
-// AuthRegister registers the handler with the given router
-func (h ConfigurationHandler) AuthRegister(auth *gin.RouterGroup) {
+// GroupRegister registers the handler with the given router
+func (h ConfigurationHandler) GroupRegister(auth *gin.RouterGroup) {
 	auth.GET("/configuration", h.handler)
 }
 
