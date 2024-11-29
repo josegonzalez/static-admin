@@ -153,7 +153,7 @@ func (h SavePostHandler) handler(c *gin.Context) {
 		return
 	}
 
-	fullMarkdown := frontmatterYaml + "\n" + contentMarkdown
+	fullMarkdown := frontmatterYaml + "\n" + contentMarkdown + "\n"
 
 	// Get GitHub auth details
 	var githubAuth database.GitHubAuth
