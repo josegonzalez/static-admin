@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	htmltomarkdown "github.com/JohannesKaufmann/html-to-markdown/v2"
+	"github.com/JohannesKaufmann/html-to-markdown/v2/converter"
 	elem "github.com/chasefleming/elem-go"
 	"github.com/chasefleming/elem-go/attrs"
-	"github.com/yuin/goldmark"
-	"github.com/yuin/goldmark/renderer/html"
 )
 
 // Block represents a structured block of content.
@@ -73,7 +73,7 @@ func ParseBlocksToMarkdown(blocks []Block, options ...MarkdownOption) (string, e
 		}
 	}
 
-	return buffer.String(), nil
+	return strings.TrimSpace(buffer.String()), nil
 }
 
 // blockHandlers maps block types to their corresponding handler functions.
@@ -92,7 +92,7 @@ var blockHandlers = map[string]func(*bytes.Buffer, map[string]interface{}, *Mark
 // Handlers for individual block types
 func handleParagraph(buffer *bytes.Buffer, data map[string]interface{}, opts *MarkdownOptions) error {
 	if text, ok := data["text"].(string); ok {
-		markdownText := convertToMarkdown(text)
+		markdownText := convertToMarkdown(strings.TrimSpace(text))
 		buffer.WriteString(markdownText + "\n\n")
 	}
 	return nil
@@ -302,21 +302,14 @@ func handleThematicBreak(buffer *bytes.Buffer, data map[string]interface{}, opts
 }
 
 func convertToMarkdown(htmlText string) string {
-	// Create a goldmark instance
-	md := goldmark.New(
-		goldmark.WithRendererOptions(
-			html.WithUnsafe(), // Allow unsafe HTML for parsing
-		),
+	markdown, err := htmltomarkdown.ConvertString(
+		htmlText,
+		converter.WithDomain("https://localhost:3000"),
 	)
-
-	// Convert HTML to Markdown
-	var markdown bytes.Buffer
-	if err := md.Convert([]byte(htmlText), &markdown); err != nil {
-		// Handle conversion error
-		return htmlText // Fall back to returning the input HTML as-is
+	if err != nil {
+		println("Error converting to markdown:", err)
 	}
-
-	return markdown.String()
+	return markdown
 }
 
 func handleImage(buffer *bytes.Buffer, data map[string]interface{}, opts *MarkdownOptions) error {
