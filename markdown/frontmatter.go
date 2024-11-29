@@ -160,3 +160,36 @@ func parseFrontmatterFields(frontmatter map[string]interface{}) ([]FrontmatterFi
 
 	return orderedFields, nil
 }
+
+// FrontmatterFieldToYaml converts a slice of FrontmatterField to a YAML string
+func FrontmatterFieldToYaml(fields []FrontmatterField) (string, error) {
+	// Convert fields to a map for yaml marshaling
+	frontmatter := make(map[string]interface{})
+	for _, field := range fields {
+		var value interface{}
+		switch field.Type {
+		case "string":
+			value = field.StringValue
+		case "bool":
+			value = field.BoolValue
+		case "number":
+			value = field.NumberValue
+		case "dateTime":
+			value = field.DateTimeValue.Format("2006-01-02 15:04")
+		case "stringSlice":
+			value = field.StringSliceValue
+		default:
+			return "", fmt.Errorf("unknown field type: %s", field.Type)
+		}
+		frontmatter[field.Name] = value
+	}
+
+	// Marshal to YAML
+	yamlData, err := yaml.Marshal(frontmatter)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal frontmatter: %w", err)
+	}
+
+	// Format with delimiters
+	return fmt.Sprintf("---\n%s---\n", string(yamlData)), nil
+}

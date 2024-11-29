@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"static-admin/blocks"
 	"static-admin/config"
 	"static-admin/database"
 	"static-admin/github"
@@ -20,7 +21,7 @@ type PostContentResponse struct {
 	ID          string                      `json:"id"`
 	Path        string                      `json:"path"`
 	Frontmatter []markdown.FrontmatterField `json:"frontmatter"`
-	Blocks      []markdown.Block            `json:"blocks"`
+	Blocks      []blocks.Block              `json:"blocks"`
 }
 
 // NewPostHandler creates a new handler for the post content endpoint

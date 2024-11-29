@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http"
 	"regexp"
+	"static-admin/blocks"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -14,12 +15,6 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
 )
-
-// Block represents a structured block of content.
-type Block struct {
-	Type string                 `json:"type"`
-	Data map[string]interface{} `json:"data"`
-}
 
 type ParseOption func(*ParseConfig)
 
@@ -75,7 +70,7 @@ var MarkdownParser = goldmark.New(
 )
 
 // ParseMarkdownToBlocks converts Markdown content into structured blocks.
-func ParseMarkdownToBlocks(markdown string, opts ...ParseOption) ([]Block, error) {
+func ParseMarkdownToBlocks(markdown string, opts ...ParseOption) ([]blocks.Block, error) {
 	config := &ParseConfig{
 		MaxDepth:            5,      // Default max depth for lists
 		QuoteCaptionAlign:   "left", // Default alignment for quote captions
@@ -89,7 +84,7 @@ func ParseMarkdownToBlocks(markdown string, opts ...ParseOption) ([]Block, error
 		opt(config)
 	}
 
-	var blocks []Block
+	var blocks []blocks.Block
 
 	// Initialize Goldmark parser with TaskList extension
 	reader := text.NewReader([]byte(markdown))
@@ -117,7 +112,7 @@ func ParseMarkdownToBlocks(markdown string, opts ...ParseOption) ([]Block, error
 }
 
 // processNode routes the processing of an AST node to the appropriate handler.
-func processNode(node ast.Node, markdown string, config *ParseConfig) (Block, ast.WalkStatus, bool) {
+func processNode(node ast.Node, markdown string, config *ParseConfig) (blocks.Block, ast.WalkStatus, bool) {
 	switch n := node.(type) {
 	case *ast.Heading:
 		return handleHeading(n, markdown), ast.WalkContinue, true
@@ -138,11 +133,11 @@ func processNode(node ast.Node, markdown string, config *ParseConfig) (Block, as
 	case *ast.Paragraph:
 		return handleParagraph(n, markdown, config), ast.WalkContinue, true
 	default:
-		return Block{}, ast.WalkContinue, false
+		return blocks.Block{}, ast.WalkContinue, false
 	}
 }
 
-func handleHeading(node *ast.Heading, markdown string) Block {
+func handleHeading(node *ast.Heading, markdown string) blocks.Block {
 	nodeText := extractNodeText(node, markdown)
 
 	text, err := markdownToHTML(nodeText)
@@ -150,7 +145,7 @@ func handleHeading(node *ast.Heading, markdown string) Block {
 		text = nodeText
 	}
 
-	return Block{
+	return blocks.Block{
 		Type: "header",
 		Data: map[string]interface{}{
 			"text":  text,
@@ -159,14 +154,14 @@ func handleHeading(node *ast.Heading, markdown string) Block {
 	}
 }
 
-func handleDelimiter() Block {
-	return Block{
+func handleDelimiter() blocks.Block {
+	return blocks.Block{
 		Type: "delimiter",
 		Data: map[string]interface{}{},
 	}
 }
 
-func handleList(node *ast.List, markdown string, config *ParseConfig) Block {
+func handleList(node *ast.List, markdown string, config *ParseConfig) blocks.Block {
 	style := "unordered"
 	if node.IsOrdered() {
 		style = "ordered"
@@ -185,7 +180,7 @@ func handleList(node *ast.List, markdown string, config *ParseConfig) Block {
 		delete(meta, "counterType")
 	}
 
-	return Block{
+	return blocks.Block{
 		Type: "list",
 		Data: map[string]interface{}{
 			"style": style,
@@ -254,9 +249,9 @@ func detectCounterType(list *ast.List) string {
 	}
 }
 
-func handleCodeBlock(node *ast.CodeBlock, markdown string) Block {
+func handleCodeBlock(node *ast.CodeBlock, markdown string) blocks.Block {
 	code := extractNodeText(node, markdown)
-	return Block{
+	return blocks.Block{
 		Type: "code",
 		Data: map[string]interface{}{
 			"code": code,
@@ -264,10 +259,10 @@ func handleCodeBlock(node *ast.CodeBlock, markdown string) Block {
 	}
 }
 
-func handleFencedCodeBlock(node *ast.FencedCodeBlock, markdown string) Block {
+func handleFencedCodeBlock(node *ast.FencedCodeBlock, markdown string) blocks.Block {
 	code := extractNodeText(node, markdown)
 	language := string(node.Language([]byte(markdown)))
-	return Block{
+	return blocks.Block{
 		Type: "code",
 		Data: map[string]interface{}{
 			"code":     code,
@@ -276,7 +271,7 @@ func handleFencedCodeBlock(node *ast.FencedCodeBlock, markdown string) Block {
 	}
 }
 
-func handleBlockquote(node *ast.Blockquote, markdown string, config *ParseConfig) Block {
+func handleBlockquote(node *ast.Blockquote, markdown string, config *ParseConfig) blocks.Block {
 	content := extractNodeText(node, markdown)
 	admonitionRegex := regexp.MustCompile(`^\[\!([A-Z]*)\]\n([\S\s]*)`)
 	matches := admonitionRegex.FindStringSubmatch(content)
@@ -299,7 +294,7 @@ func handleBlockquote(node *ast.Blockquote, markdown string, config *ParseConfig
 		if err != nil {
 			htmlContent = matches[2]
 		}
-		return Block{
+		return blocks.Block{
 			Type: "alert",
 			Data: map[string]interface{}{
 				"type":    alertType,
@@ -337,7 +332,7 @@ func handleBlockquote(node *ast.Blockquote, markdown string, config *ParseConfig
 		}
 	}
 
-	return Block{
+	return blocks.Block{
 		Type: "quote",
 		Data: map[string]interface{}{
 			"text":      htmlQuoteText,
@@ -347,7 +342,7 @@ func handleBlockquote(node *ast.Blockquote, markdown string, config *ParseConfig
 	}
 }
 
-func handleHTMLBlock(node *ast.HTMLBlock, markdown string, config *ParseConfig) Block {
+func handleHTMLBlock(node *ast.HTMLBlock, markdown string, config *ParseConfig) blocks.Block {
 	htmlContent := extractNodeText(node, markdown)
 
 	// Handle `<figure>` blocks
@@ -356,7 +351,7 @@ func handleHTMLBlock(node *ast.HTMLBlock, markdown string, config *ParseConfig) 
 	}
 
 	// Handle arbitrary HTML blocks
-	return Block{
+	return blocks.Block{
 		Type: "raw",
 		Data: map[string]interface{}{
 			"html": htmlContent,
@@ -364,7 +359,7 @@ func handleHTMLBlock(node *ast.HTMLBlock, markdown string, config *ParseConfig) 
 	}
 }
 
-func handleFigureBlock(node ast.Node, markdown string, config *ParseConfig) *Block {
+func handleFigureBlock(node ast.Node, markdown string, config *ParseConfig) *blocks.Block {
 	htmlContent := extractNodeText(node, markdown)
 
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlContent))
@@ -386,7 +381,7 @@ func handleFigureBlock(node ast.Node, markdown string, config *ParseConfig) *Blo
 	imageURL, _ := figures.Find("img").Attr("src")
 	caption := figures.Find("figcaption").Text()
 
-	return &Block{
+	return &blocks.Block{
 		Type: "image",
 		Data: map[string]interface{}{
 			"file": map[string]interface{}{
@@ -400,7 +395,7 @@ func handleFigureBlock(node ast.Node, markdown string, config *ParseConfig) *Blo
 	}
 }
 
-func handleTable(node *east.Table, markdown string, config *ParseConfig) Block {
+func handleTable(node *east.Table, markdown string, config *ParseConfig) blocks.Block {
 	var content [][]string
 	withHeadings := false
 
@@ -415,7 +410,7 @@ func handleTable(node *east.Table, markdown string, config *ParseConfig) Block {
 		}
 	}
 
-	return Block{
+	return blocks.Block{
 		Type: "table",
 		Data: map[string]interface{}{
 			"withHeadings": withHeadings,
@@ -439,7 +434,7 @@ func parseTableRow(row ast.Node, markdown string) []string {
 	return rowContent
 }
 
-func handleParagraph(node *ast.Paragraph, markdown string, config *ParseConfig) Block {
+func handleParagraph(node *ast.Paragraph, markdown string, config *ParseConfig) blocks.Block {
 	nodeText := extractNodeText(node, markdown)
 	text, err := markdownToHTML(nodeText)
 	if err != nil {
@@ -454,7 +449,7 @@ func handleParagraph(node *ast.Paragraph, markdown string, config *ParseConfig) 
 	// Check if paragraph is a standalone link
 	linkRegex := regexp.MustCompile(`^https?:\/\/[^\s]+$`)
 	if linkRegex.MatchString(text) {
-		return Block{
+		return blocks.Block{
 			Type: "linkTool",
 			Data: map[string]interface{}{
 				"link": text,
@@ -463,7 +458,7 @@ func handleParagraph(node *ast.Paragraph, markdown string, config *ParseConfig) 
 		}
 	}
 
-	return Block{
+	return blocks.Block{
 		Type: "paragraph",
 		Data: map[string]interface{}{
 			"text": text,
@@ -471,7 +466,7 @@ func handleParagraph(node *ast.Paragraph, markdown string, config *ParseConfig) 
 	}
 }
 
-func handleImageBlock(_ ast.Node, _ string, htmlContent string, config *ParseConfig) *Block {
+func handleImageBlock(_ ast.Node, _ string, htmlContent string, config *ParseConfig) *blocks.Block {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlContent))
 	if err != nil {
 		return nil
@@ -491,7 +486,7 @@ func handleImageBlock(_ ast.Node, _ string, htmlContent string, config *ParseCon
 	imageURL, _ := images.Attr("src")
 	caption := images.AttrOr("alt", "")
 
-	return &Block{
+	return &blocks.Block{
 		Type: "image",
 		Data: map[string]interface{}{
 			"caption": caption,

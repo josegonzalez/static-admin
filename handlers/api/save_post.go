@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"static-admin/blocks"
 	"static-admin/config"
 	"static-admin/database"
 	"static-admin/markdown"
@@ -17,7 +18,15 @@ type SavePostRequest struct {
 	ID          string                      `json:"id"`
 	Path        string                      `json:"path"`
 	Frontmatter []markdown.FrontmatterField `json:"frontmatter"`
-	Blocks      []markdown.Block            `json:"blocks"`
+	Blocks      []blocks.Block              `json:"blocks"`
+}
+
+// SavePostResponse represents the JSON response for saving a post's content
+type SavePostResponse struct {
+	Message  string          `json:"message"`
+	Content  SavePostRequest `json:"content"`
+	Path     string          `json:"path"`
+	Markdown string          `json:"markdown"`
 }
 
 // NewSavePostHandler creates a new handler for saving post content
@@ -122,10 +131,31 @@ func (h SavePostHandler) handler(c *gin.Context) {
 		return
 	}
 
-	// For now, just print the content
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Received post content",
-		"content": req,
-		"path":    path,
+	// Generate frontmatter YAML
+	frontmatterYaml, err := markdown.FrontmatterFieldToYaml(req.Frontmatter)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to generate frontmatter",
+		})
+		return
+	}
+
+	// Generate markdown from blocks
+	contentMarkdown, err := blocks.ParseBlocksToMarkdown(req.Blocks)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to generate markdown",
+		})
+		return
+	}
+
+	// Combine frontmatter and content
+	fullMarkdown := frontmatterYaml + contentMarkdown
+
+	c.JSON(http.StatusOK, SavePostResponse{
+		Message:  "Received post content",
+		Content:  req,
+		Path:     path,
+		Markdown: fullMarkdown,
 	})
 }
