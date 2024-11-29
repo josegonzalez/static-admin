@@ -4,6 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { Input } from "@/components/ui/input";
 import MultipleSelector from "@/components/ui/multiple-selector";
+import { Spinner } from "@/components/ui/spinner";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/layouts/dashboard-layout";
@@ -35,6 +36,7 @@ export default function EditPostPage() {
   const router = useRouter();
   const { siteId, siteName, postId } = router.query;
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [post, setPost] = useState<Post>(DEFAULT_POST);
   const [blocks, setBlocks] = useState<OutputBlockData[]>([]);
@@ -100,6 +102,7 @@ export default function EditPostPage() {
     setBlocks(data.blocks);
     setValue("blocks", data.blocks);
     setInitialBlockState(data.blocks);
+    setIsSaving(true);
 
     const newPost: Post = {
       id: post.id,
@@ -155,6 +158,8 @@ export default function EditPostPage() {
         description: err instanceof Error ? err.message : "Failed to save post",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -175,6 +180,11 @@ export default function EditPostPage() {
       <p className="text-xs mt-0 pt-0 space-y-0 text-gray-500">
         path: {post.path}
       </p>
+      {isSaving && (
+        <div className="fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0">
+          <Spinner show={true} className="fixed left-[50%] top-[50%] z-50" />
+        </div>
+      )}
       <hr className="my-4" />
       <div className="space-y-6">
         <div className="space-y-4">
