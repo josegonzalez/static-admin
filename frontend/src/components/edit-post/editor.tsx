@@ -1,6 +1,9 @@
 // @ts-ignore
 import Delimiter from "@coolbytes/editorjs-delimiter";
-import CodeTool from "@editorjs/code";
+// @ts-ignore
+import editorjsCodecup from "@calumk/editorjs-codecup";
+import InlineCode from "@editorjs/inline-code";
+
 import EditorJS, { BlockMutationEvent } from "@editorjs/editorjs";
 import {
   OutputBlockData,
@@ -57,7 +60,7 @@ export function EditorComponent({ blocks, onChange }: EditorProps) {
     },
     tools: {
       alert: Alert,
-      code: CodeTool,
+      code: editorjsCodecup,
       delimiter: {
         class: Delimiter,
         config: {
@@ -67,6 +70,9 @@ export function EditorComponent({ blocks, onChange }: EditorProps) {
           lineThicknessOptions: [2],
           styleOptions: ["line"],
         },
+      },
+      inlineCode: {
+        class: InlineCode,
       },
       header: Header,
       image: ImageTool,
