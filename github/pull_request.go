@@ -76,21 +76,18 @@ func getHeadRef(owner, repo, branch, token string) (string, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/git/ref/heads/%s", owner, repo, branch)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		println("Error creating head request:", err)
 		return "", err
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		println("Error getting head:", err)
 		return "", err
 	}
 	defer resp.Body.Close()
 
 	var headData Ref
 	if err := json.NewDecoder(resp.Body).Decode(&headData); err != nil {
-		println("Error decoding head response:", err)
 		return "", err
 	}
 	return headData.Object.SHA, nil
@@ -100,21 +97,18 @@ func getCommitTree(owner, repo, commitSHA, token string) (string, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/git/commits/%s", owner, repo, commitSHA)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		println("Error creating commit request:", err)
 		return "", err
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		println("Error getting commit:", err)
 		return "", err
 	}
 	defer resp.Body.Close()
 
 	var commitData Commit
 	if err := json.NewDecoder(resp.Body).Decode(&commitData); err != nil {
-		println("Error decoding commit response:", err)
 		return "", err
 	}
 	return commitData.Tree.SHA, nil
@@ -136,13 +130,11 @@ func createTree(owner, repo, baseTree, path, content, token string) (string, err
 
 	body, err := json.Marshal(treeData)
 	if err != nil {
-		println("Error marshaling tree data:", err)
 		return "", err
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {
-		println("Error creating tree request:", err)
 		return "", err
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -150,14 +142,12 @@ func createTree(owner, repo, baseTree, path, content, token string) (string, err
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		println("Error creating tree:", err)
 		return "", err
 	}
 	defer resp.Body.Close()
 
 	var newTreeData CommitTree
 	if err := json.NewDecoder(resp.Body).Decode(&newTreeData); err != nil {
-		println("Error decoding tree response:", err)
 		return "", err
 	}
 	return newTreeData.SHA, nil
@@ -173,13 +163,11 @@ func createCommit(owner, repo, message, parentSHA, treeSHA, token string) (strin
 
 	body, err := json.Marshal(commitData)
 	if err != nil {
-		println("Error marshaling commit data:", err)
 		return "", err
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {
-		println("Error creating commit request:", err)
 		return "", err
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -187,7 +175,6 @@ func createCommit(owner, repo, message, parentSHA, treeSHA, token string) (strin
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		println("Error creating commit:", err)
 		return "", err
 	}
 	defer resp.Body.Close()
@@ -196,7 +183,6 @@ func createCommit(owner, repo, message, parentSHA, treeSHA, token string) (strin
 		SHA string `json:"sha"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&commitResp); err != nil {
-		println("Error decoding commit response:", err)
 		return "", err
 	}
 	return commitResp.SHA, nil
@@ -212,13 +198,11 @@ func updateBranchRef(owner, repo, branch, sha, token string) error {
 
 	body, err := json.Marshal(refData)
 	if err != nil {
-		println("Error marshaling ref data:", err)
 		return err
 	}
 
 	req, err := http.NewRequest("PATCH", url, bytes.NewBuffer(body))
 	if err != nil {
-		println("Error creating ref request:", err)
 		return err
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -226,7 +210,6 @@ func updateBranchRef(owner, repo, branch, sha, token string) error {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		println("Error updating branch ref:", err)
 		return err
 	}
 	defer resp.Body.Close()
@@ -246,13 +229,11 @@ func createRef(owner, repo, ref, sha, token string) error {
 
 	body, err := json.Marshal(refData)
 	if err != nil {
-		println("Error marshaling ref data:", err)
 		return err
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {
-		println("Error creating ref request:", err)
 		return err
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -260,14 +241,12 @@ func createRef(owner, repo, ref, sha, token string) error {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		println("Error creating ref:", err)
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
-		println("Error response from GitHub:", string(body))
 		return fmt.Errorf("failed to create ref: %s", string(body))
 	}
 
@@ -278,14 +257,11 @@ func CreateBranchAndUpdateFile(input CreateBranchAndUpdateFileInput) error {
 	updateBranch := true
 	lastCommitSHA, err := getHeadRef(input.Owner, input.Repo, input.Branch, input.Token)
 	if err != nil || lastCommitSHA == "" {
-		println("Using base branch as fallback")
 		updateBranch = false
 		lastCommitSHA, err = getHeadRef(input.Owner, input.Repo, input.BaseBranch, input.Token)
 		if err != nil {
 			return err
 		}
-	} else {
-		println("Using branch as fallback")
 	}
 
 	// Get tree SHA from commit
@@ -319,7 +295,6 @@ func checkIfPullRequestExists(owner, repo, branch, baseBranch, token string) (in
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		println("Error creating PR check request:", err)
 		return 0, err
 	}
 
@@ -332,19 +307,16 @@ func checkIfPullRequestExists(owner, repo, branch, baseBranch, token string) (in
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		println("Error checking for PR:", err)
 		return 0, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		println("Error decoding PR response:", err)
 		return 0, err
 	}
 
 	var prs []PullRequest
 	if err := json.NewDecoder(resp.Body).Decode(&prs); err != nil {
-		println("Error decoding PR response:", err)
 		return 0, err
 	}
 
@@ -383,14 +355,12 @@ func CreatePullRequestIfNecessary(input CreatePullRequestIfNecessaryInput) (int6
 	// Marshal the request body
 	body, err := json.Marshal(prData)
 	if err != nil {
-		println("Error marshaling PR data:", err)
 		return 0, err
 	}
 
 	// Create request
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {
-		println("Error creating PR request:", err)
 		return 0, err
 	}
 
@@ -401,7 +371,6 @@ func CreatePullRequestIfNecessary(input CreatePullRequestIfNecessaryInput) (int6
 	// Send request
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		println("Error sending PR request:", err)
 		return 0, err
 	}
 	defer resp.Body.Close()
@@ -409,13 +378,11 @@ func CreatePullRequestIfNecessary(input CreatePullRequestIfNecessaryInput) (int6
 	// Read response
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		println("Error reading PR response:", err)
 		return 0, err
 	}
 
 	// Check status code
 	if resp.StatusCode >= 300 {
-		println("Error creating PR. Status:", resp.StatusCode, "Body:", string(respBody))
 		return 0, fmt.Errorf("failed to create PR: %s", string(respBody))
 	}
 
@@ -424,7 +391,6 @@ func CreatePullRequestIfNecessary(input CreatePullRequestIfNecessaryInput) (int6
 		Number int64 `json:"number"`
 	}
 	if err := json.Unmarshal(respBody, &prResp); err != nil {
-		println("Error parsing PR response:", err)
 		return 0, err
 	}
 
