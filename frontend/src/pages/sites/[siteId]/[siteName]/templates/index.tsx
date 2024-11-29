@@ -1,5 +1,7 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import MultipleSelector from "@/components/ui/multiple-selector";
 import {
   Select,
   SelectContent,
@@ -152,12 +155,77 @@ interface EditableRowProps {
   onSave: (name: string, type: string) => void;
 }
 
+interface DefaultValueInputProps {
+  type: string;
+  value: any;
+  onChange: (value: any) => void;
+}
+
+function DefaultValueInput({ type, value, onChange }: DefaultValueInputProps) {
+  switch (type) {
+    case "string":
+      return (
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Default text"
+        />
+      );
+    case "bool":
+      return <Checkbox checked={value} onCheckedChange={onChange} />;
+    case "number":
+      return (
+        <Input
+          type="number"
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          placeholder="Default number"
+        />
+      );
+    case "dateTime":
+      return (
+        <DateTimePicker
+          value={value ? new Date(value) : undefined}
+          onChange={(date: any) => onChange(date?.toISOString())}
+        />
+      );
+    case "stringSlice":
+      return (
+        <MultipleSelector
+          value={(value || []).map((v: string) => ({ value: v, label: v }))}
+          onChange={(selected: any) =>
+            onChange(selected.map((s: any) => s.value))
+          }
+          creatable
+        />
+      );
+    default:
+      return null;
+  }
+}
+
 function EditableRow({ id, field, onDelete, onSave }: EditableRowProps) {
   const { attributes, listeners, transform, transition, setNodeRef } =
     useSortable({ id });
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(field.name);
   const [type, setType] = useState(field.type);
+  const [defaultValue, setDefaultValue] = useState(() => {
+    switch (field.type) {
+      case "string":
+        return field.stringValue;
+      case "bool":
+        return field.boolValue;
+      case "number":
+        return field.numberValue;
+      case "dateTime":
+        return field.dateTimeValue;
+      case "stringSlice":
+        return field.stringSliceValue;
+      default:
+        return "";
+    }
+  });
 
   const isDefaultField = DEFAULT_FIELDS.some((f) => f.name === field.name);
 
@@ -168,6 +236,15 @@ function EditableRow({ id, field, onDelete, onSave }: EditableRowProps) {
 
   const handleSave = () => {
     if (!name || !type) return;
+    const updatedField = {
+      name,
+      type,
+      stringValue: type === "string" ? defaultValue : "",
+      boolValue: type === "bool" ? defaultValue : false,
+      numberValue: type === "number" ? defaultValue : 0,
+      dateTimeValue: type === "dateTime" ? defaultValue : "",
+      stringSliceValue: type === "stringSlice" ? defaultValue : [],
+    };
     onSave(name, type);
     setIsEditing(false);
   };
@@ -224,6 +301,21 @@ function EditableRow({ id, field, onDelete, onSave }: EditableRowProps) {
         )}
       </TableCell>
       <TableCell>
+        {isEditing ? (
+          <DefaultValueInput
+            type={type}
+            value={defaultValue}
+            onChange={setDefaultValue}
+          />
+        ) : (
+          <div className="text-sm text-gray-500">
+            {type === "stringSlice"
+              ? (defaultValue as string[]).join(", ")
+              : String(defaultValue)}
+          </div>
+        )}
+      </TableCell>
+      <TableCell>
         <div className="flex gap-2">
           {isEditing ? (
             <>
@@ -267,20 +359,32 @@ function EditableRow({ id, field, onDelete, onSave }: EditableRowProps) {
 }
 
 type NewFieldRowProps = {
-  onAdd: (name: string, type: string) => boolean;
+  onAdd: (name: string, type: string, value: any) => boolean;
 };
 
 function NewFieldRow({ onAdd }: NewFieldRowProps) {
   const [name, setName] = useState("");
   const [type, setType] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [defaultValue, setDefaultValue] = useState<any>("");
 
   const handleSave = () => {
     if (!name || !type) return;
-    onAdd(name, type);
-    setName("");
-    setType("");
-    setIsAdding(false);
+    const field: FrontmatterField = {
+      name,
+      type,
+      stringValue: type === "string" ? defaultValue : "",
+      boolValue: type === "bool" ? defaultValue : false,
+      numberValue: type === "number" ? defaultValue : 0,
+      dateTimeValue: type === "dateTime" ? defaultValue : "",
+      stringSliceValue: type === "stringSlice" ? defaultValue : [],
+    };
+    if (onAdd(field.name, field.type, defaultValue)) {
+      setName("");
+      setType("");
+      setDefaultValue("");
+      setIsAdding(false);
+    }
   };
 
   if (!isAdding) {
@@ -325,6 +429,15 @@ function NewFieldRow({ onAdd }: NewFieldRowProps) {
         </Select>
       </TableCell>
       <TableCell>
+        {type && (
+          <DefaultValueInput
+            type={type}
+            value={defaultValue}
+            onChange={setDefaultValue}
+          />
+        )}
+      </TableCell>
+      <TableCell>
         <div className="flex gap-2">
           <Button
             variant="ghost"
@@ -355,13 +468,13 @@ export default function TemplatesPage() {
   const [fields, setFields] = useState<FrontmatterField[]>(DEFAULT_FIELDS);
   const [error, setError] = useState<string | null>(null);
 
-  const handleAddField = (name: string, type: string) => {
+  const handleAddField = (name: string, type: string, value: any) => {
     if (fields.some((f) => f.name === name)) {
       setError("A field with this name already exists");
       return false;
     }
 
-    const field: FrontmatterField = {
+    let field: FrontmatterField = {
       name,
       type,
       stringValue: "",
@@ -370,6 +483,27 @@ export default function TemplatesPage() {
       dateTimeValue: "",
       stringSliceValue: [],
     };
+
+    switch (type) {
+      case "string":
+        field.stringValue = value;
+        break;
+      case "bool":
+        field.boolValue = value;
+        break;
+      case "number":
+        field.numberValue = value;
+        break;
+      case "dateTime":
+        field.dateTimeValue = value;
+        break;
+      case "stringSlice":
+        field.stringSliceValue = value;
+        break;
+      default:
+        throw new Error(`Unknown field type: ${type}`);
+        break;
+    }
 
     setFields([...fields, field]);
     setError(null);
@@ -426,6 +560,7 @@ export default function TemplatesPage() {
             <TableRow>
               <TableHead>Field Name</TableHead>
               <TableHead>Type</TableHead>
+              <TableHead>Default Value</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
