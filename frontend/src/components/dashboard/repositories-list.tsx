@@ -77,6 +77,18 @@ export function RepositoriesList({
                   View
                 </Link>
               </dd>
+
+              <dt className="text-sm font-medium text-muted-foreground">
+                Templates
+              </dt>
+              <dd className="text-sm">
+                <Link
+                  href={`/sites/${repository.id}/${repository.name}/templates`}
+                  className="text-blue-500 hover:underline"
+                >
+                  View
+                </Link>
+              </dd>
             </dl>
 
             {onDelete && (
