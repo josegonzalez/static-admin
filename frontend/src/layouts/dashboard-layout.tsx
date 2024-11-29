@@ -60,7 +60,7 @@ export default function DashboardLayout({
                       <a>Posts</a>
                     </SidebarMenuButton>
                     {sites.map((site) => (
-                      <SidebarMenuSub>
+                      <SidebarMenuSub key={site.id}>
                         <SidebarMenuSubItem>
                           <SidebarMenuSubButton asChild>
                             <Link href={`/sites/${site.id}/${site.name}/posts`}>
