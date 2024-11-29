@@ -544,7 +544,7 @@ export default function TemplatesPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Frontmatter Templates</h1>
+        <h1 className="text-3xl font-bold">Default Frontmatter Post Fields</h1>
         <hr />
       </div>
 
