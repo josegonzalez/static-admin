@@ -1,24 +1,19 @@
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { getSites } from "@/lib/api";
 import { Site } from "@/types/site";
-import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -50,52 +45,42 @@ export default function DashboardLayout({
           <SidebarHeader>
             <SidebarMenu>
               <SidebarMenuItem>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <SidebarMenuButton>
-                      Select Site
-                      <ChevronDown className="ml-auto" />
-                    </SidebarMenuButton>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-[--radix-popper-anchor-width]">
-                    {sites.length === 0 ? (
-                      <DropdownMenuItem disabled>
-                        <span>No sites configured</span>
-                      </DropdownMenuItem>
-                    ) : (
-                      sites.map((site) => (
-                        <DropdownMenuItem key={site.id}>
-                          <Link
-                            href={`/sites/${site.id}/${site.name}/posts`}
-                            className="flex w-full"
-                          >
-                            {site.name}
-                          </Link>
-                        </DropdownMenuItem>
-                      ))
-                    )}
-                    <DropdownMenuItem>
-                      <Link
-                        href="/configuration/sites"
-                        className="flex w-full text-blue-500"
-                      >
-                        Add new site...
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <SidebarMenuButton>
+                  <Link href="/dashboard">Static Admin</Link>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarHeader>
           <SidebarContent>
             <SidebarGroup>
-              <SidebarGroupLabel>Navigation</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
-                      <Link href="/posts">Posts</Link>
+                      <a>Posts</a>
                     </SidebarMenuButton>
+                    {sites.map((site) => (
+                      <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild>
+                            <Link href={`/sites/${site.id}/${site.name}/posts`}>
+                              {site.name}
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      </SidebarMenuSub>
+                    ))}
+                    {sites.length === 0 && (
+                      <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild>
+                            <Link href="/configuration/sites">
+                              Add new site...
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      </SidebarMenuSub>
+                    )}
                   </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>

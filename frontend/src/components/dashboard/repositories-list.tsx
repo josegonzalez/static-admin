@@ -65,6 +65,18 @@ export function RepositoriesList({
                 Branch
               </dt>
               <dd className="text-sm">{repository.default_branch}</dd>
+
+              <dt className="text-sm font-medium text-muted-foreground">
+                Posts
+              </dt>
+              <dd className="text-sm">
+                <Link
+                  href={`/sites/${repository.id}/${repository.name}/posts`}
+                  className="text-blue-500 hover:underline"
+                >
+                  View
+                </Link>
+              </dd>
             </dl>
 
             {onDelete && (

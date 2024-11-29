@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -50,6 +51,7 @@ interface Repository {
 export default function SitesPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingRepos, setIsLoadingRepos] = useState(false);
   const [sites, setSites] = useState<Site[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -97,6 +99,7 @@ export default function SitesPage() {
       }
 
       try {
+        setIsLoadingRepos(true);
         const repos = await getGitHubRepositories(selectedOrg);
         setRepositories(repos);
         setSelectedRepos(new Set());
@@ -106,6 +109,8 @@ export default function SitesPage() {
         } else {
           setError("Failed to fetch repositories");
         }
+      } finally {
+        setIsLoadingRepos(false);
       }
     };
 
@@ -118,13 +123,10 @@ export default function SitesPage() {
     setIsSaving(true);
     try {
       await Promise.all(
-        Array.from(selectedRepos).map((repoUrl) => createSite(repoUrl))
+        Array.from(selectedRepos).map((repoUrl) => createSite(repoUrl)),
       );
-      const updatedSites = await getSites();
-      setSites(updatedSites);
-      setSelectedOrg("");
-      setSelectedRepos(new Set());
-      setError(null);
+
+      router.reload();
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -155,13 +157,13 @@ export default function SitesPage() {
   };
 
   const filteredRepositories = repositories.filter((repo) =>
-    repo.name.toLowerCase().includes(searchFilter.toLowerCase())
+    repo.name.toLowerCase().includes(searchFilter.toLowerCase()),
   );
 
   const handleDelete = async (id: number) => {
     if (
       !window.confirm(
-        "Are you sure you want to delete this site? You will need to re-add the site to update posts in the future."
+        "Are you sure you want to delete this site? You will need to re-add the site to update posts in the future.",
       )
     ) {
       return;
@@ -169,9 +171,7 @@ export default function SitesPage() {
 
     try {
       await deleteSite(id);
-      const updatedSites = await getSites();
-      setSites(updatedSites);
-      setError(null);
+      router.reload();
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -219,57 +219,62 @@ export default function SitesPage() {
             </Select>
           </div>
 
-          {selectedOrg && repositories.length > 0 && (
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="search" className="text-sm font-medium">
-                  Filter Repositories
-                </label>
-                <Input
-                  id="search"
-                  placeholder="Type to filter..."
-                  value={searchFilter}
-                  onChange={(e) => setSearchFilter(e.target.value)}
-                  className="max-w-sm"
-                />
-              </div>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={selectedRepos.size === repositories.length}
-                          onCheckedChange={toggleAllRepositories}
-                        />
-                      </TableHead>
-                      <TableHead>Repository</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Visibility</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredRepositories.map((repo) => (
-                      <TableRow key={repo.full_name}>
-                        <TableCell>
+          {isLoadingRepos ? (
+            <Skeleton className="h-10 w-96" />
+          ) : (
+            selectedOrg &&
+            repositories.length > 0 && (
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="search" className="text-sm font-medium">
+                    Filter Repositories
+                  </label>
+                  <Input
+                    id="search"
+                    placeholder="Type to filter..."
+                    value={searchFilter}
+                    onChange={(e) => setSearchFilter(e.target.value)}
+                    className="max-w-sm"
+                  />
+                </div>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">
                           <Checkbox
-                            checked={selectedRepos.has(repo.html_url)}
-                            onCheckedChange={() =>
-                              toggleRepository(repo.html_url)
-                            }
+                            checked={selectedRepos.size === repositories.length}
+                            onCheckedChange={toggleAllRepositories}
                           />
-                        </TableCell>
-                        <TableCell>{repo.name}</TableCell>
-                        <TableCell>{repo.description}</TableCell>
-                        <TableCell>
-                          {repo.private ? "Private" : "Public"}
-                        </TableCell>
+                        </TableHead>
+                        <TableHead>Repository</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Visibility</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredRepositories.map((repo) => (
+                        <TableRow key={repo.full_name}>
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedRepos.has(repo.html_url)}
+                              onCheckedChange={() =>
+                                toggleRepository(repo.html_url)
+                              }
+                            />
+                          </TableCell>
+                          <TableCell>{repo.name}</TableCell>
+                          <TableCell>{repo.description}</TableCell>
+                          <TableCell>
+                            {repo.private ? "Private" : "Public"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
-            </div>
+            )
           )}
 
           <Button

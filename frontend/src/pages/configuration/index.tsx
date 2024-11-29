@@ -42,7 +42,7 @@ export default function ConfigurationPage() {
     // Show confirmation dialog
     if (
       !window.confirm(
-        "Are you sure you want to delete this site? You will need to re-add the site to update posts in the future."
+        "Are you sure you want to delete this site? You will need to re-add the site to update posts in the future.",
       )
     ) {
       return;
@@ -50,9 +50,7 @@ export default function ConfigurationPage() {
 
     try {
       await deleteSite(id);
-      const updatedSites = await getSites();
-      setSites(updatedSites);
-      setError(null);
+      router.reload();
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
