@@ -1,15 +1,19 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
+	"path/filepath"
 	"static-admin/blocks"
 	"static-admin/config"
 	"static-admin/database"
+	"static-admin/github"
 	"static-admin/markdown"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
+	"github.com/gosimple/slug"
 	"gorm.io/gorm"
 )
 
@@ -24,9 +28,10 @@ type SavePostRequest struct {
 // SavePostResponse represents the JSON response for saving a post's content
 type SavePostResponse struct {
 	Message  string          `json:"message"`
-	Content  SavePostRequest `json:"content"`
+	Request  SavePostRequest `json:"content"`
 	Path     string          `json:"path"`
 	Markdown string          `json:"markdown"`
+	PRURL    string          `json:"pr_url"`
 }
 
 // NewSavePostHandler creates a new handler for saving post content
@@ -131,7 +136,7 @@ func (h SavePostHandler) handler(c *gin.Context) {
 		return
 	}
 
-	// Generate frontmatter YAML
+	// Generate markdown content
 	frontmatterYaml, err := markdown.FrontmatterFieldToYaml(req.Frontmatter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -140,7 +145,6 @@ func (h SavePostHandler) handler(c *gin.Context) {
 		return
 	}
 
-	// Generate markdown from blocks
 	contentMarkdown, err := blocks.ParseBlocksToMarkdown(req.Blocks)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -149,13 +153,69 @@ func (h SavePostHandler) handler(c *gin.Context) {
 		return
 	}
 
-	// Combine frontmatter and content
-	fullMarkdown := frontmatterYaml + contentMarkdown
+	fullMarkdown := frontmatterYaml + "\n" + contentMarkdown
+
+	// Get GitHub auth details
+	var githubAuth database.GitHubAuth
+	if err := h.Database.Where("user_id = ?", uint(userID)).First(&githubAuth).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "GitHub authentication required",
+		})
+		return
+	}
+
+	// Extract owner and repo from repository URL
+	urlParts := strings.Split(site.RepositoryURL, "/")
+	if len(urlParts) < 5 {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Invalid repository URL",
+		})
+		return
+	}
+	owner := urlParts[len(urlParts)-2]
+	repo := urlParts[len(urlParts)-1]
+
+	fileName := filepath.Base(path)
+	branchName := fmt.Sprintf("update-%s", slug.Make(fileName))
+
+	err = github.CreateBranchAndUpdateFile(github.CreateBranchAndUpdateFileInput{
+		Owner:      owner,
+		Repo:       repo,
+		Path:       path,
+		Content:    fullMarkdown,
+		Branch:     branchName,
+		BaseBranch: site.DefaultBranch,
+		CommitMsg:  fmt.Sprintf("Update %s", path),
+		Token:      githubAuth.AccessToken,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": fmt.Sprintf("Failed to create branch and update file: %v", err),
+		})
+		return
+	}
+
+	prNumber, err := github.CreatePullRequestIfNecessary(github.CreatePullRequestIfNecessaryInput{
+		Owner:      owner,
+		Repo:       repo,
+		Branch:     branchName,
+		BaseBranch: site.DefaultBranch,
+		Title:      fmt.Sprintf("Update %s", fileName),
+		Body:       fmt.Sprintf("Updates content for %s", path),
+		Token:      githubAuth.AccessToken,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": fmt.Sprintf("Failed to create pull request: %v", err),
+		})
+		return
+	}
 
 	c.JSON(http.StatusOK, SavePostResponse{
-		Message:  "Received post content",
-		Content:  req,
+		Message:  "Created pull request for changes",
+		Request:  req,
 		Path:     path,
 		Markdown: fullMarkdown,
+		PRURL:    fmt.Sprintf("https://github.com/%s/%s/pull/%d", owner, repo, prNumber),
 	})
 }
