@@ -4,8 +4,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { Input } from "@/components/ui/input";
 import MultipleSelector from "@/components/ui/multiple-selector";
+import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/layouts/dashboard-layout";
-import { getPost } from "@/lib/api";
+import { getPost, savePost } from "@/lib/api";
 import { FrontmatterField } from "@/types/frontmatter";
 import { Post } from "@/types/post";
 import { OutputBlockData } from "@editorjs/editorjs";
@@ -29,6 +31,7 @@ const formSchema = z.object({
 });
 
 export default function EditPostPage() {
+  const { toast } = useToast();
   const router = useRouter();
   const { siteId, siteName, postId } = router.query;
   const [isLoading, setIsLoading] = useState(true);
@@ -88,7 +91,10 @@ export default function EditPostPage() {
     }
   }, [siteId, postId]);
 
-  const handleSubmit = (data: FieldValues, e?: React.BaseSyntheticEvent) => {
+  const handleSubmit = async (
+    data: FieldValues,
+    e?: React.BaseSyntheticEvent,
+  ) => {
     e?.preventDefault();
 
     setBlocks(data.blocks);
@@ -103,38 +109,52 @@ export default function EditPostPage() {
     };
 
     for (const key in post.frontmatter) {
+      const fieldName = post.frontmatter[key].name;
       let field: FrontmatterField = {
-        name: key,
+        name: fieldName,
         type: post.frontmatter[key].type,
         stringValue: "",
         boolValue: false,
         numberValue: 0,
-        dateTimeValue: "",
+        dateTimeValue: "0001-01-01T00:00:00Z",
         stringSliceValue: [],
       };
       if (post.frontmatter[key].type === "string") {
-        field.stringValue = data[key];
+        field.stringValue = data[fieldName];
       } else if (post.frontmatter[key].type === "bool") {
-        field.boolValue = data[key];
+        field.boolValue = data[fieldName];
       } else if (post.frontmatter[key].type === "number") {
-        field.numberValue = data[key];
+        field.numberValue = data[fieldName];
       } else if (post.frontmatter[key].type === "dateTime") {
-        field.dateTimeValue = data[key];
+        field.dateTimeValue = data[fieldName];
       } else if (post.frontmatter[key].type === "stringSlice") {
-        field.stringSliceValue = data[key];
-        let values = [];
-        for (const value of data[key]) {
-          values.push(value.toString());
-        }
+        field.stringSliceValue = data[fieldName];
         setStringSliceValues({
           ...stringSliceValues,
-          [key]: values,
+          [fieldName]: data[fieldName],
         });
       } else {
         throw new Error(
           `Unknown frontmatter type: ${post.frontmatter[key].type}`,
         );
       }
+      newPost.frontmatter.push(field);
+    }
+
+    try {
+      if (typeof siteId !== "string" || typeof postId !== "string") return;
+      const response = await savePost(siteId, postId, newPost);
+      toast({
+        title: "Success",
+        description: "Post saved successfully",
+        variant: "default",
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to save post",
+        variant: "destructive",
+      });
     }
   };
 
@@ -149,139 +169,145 @@ export default function EditPostPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Edit Post</h1>
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold">Post ID</h2>
-          <p className="font-mono">{post.id}</p>
+    <>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Edit Post</h1>
         </div>
 
-        <div>
-          <h2 className="text-lg font-semibold">Site</h2>
-          <p>{siteName}</p>
-        </div>
-
-        <form onSubmit={handleSubmitForm(handleSubmit)} className="space-y-8">
-          <div className="space-y-4">
-            {Object.values(post.frontmatter).map((field) => {
-              return (
-                <div key={field.name}>
-                  {field.type !== "bool" && (
-                    <label htmlFor={field.name} className="mb-2 flex flex-col">
-                      {field.name}
-                    </label>
-                  )}
-                  {field.type === "string" && (
-                    <Input
-                      id={field.name}
-                      {...register(field.name, {
-                        value: field.stringValue,
-                      })}
-                    />
-                  )}
-                  {field.type === "bool" && (
-                    <>
-                      <Checkbox
-                        id={field.name}
-                        {...register(field.name, {
-                          value: field.boolValue,
-                        })}
-                      />
-                      <label htmlFor={field.name} className="mb-2 ml-2">
-                        {field.name}
-                      </label>
-                    </>
-                  )}
-                  {field.type === "number" && (
-                    <Input
-                      id={field.name}
-                      {...register(field.name, {
-                        value: field.numberValue,
-                      })}
-                    />
-                  )}
-                  {field.type === "stringSlice" && (
-                    <>
-                      <select
-                        {...register(field.name, {
-                          value: stringSliceValues[field.name],
-                        })}
-                        multiple
-                        className="hidden"
-                      >
-                        {stringSliceValues[field.name].map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                      <MultipleSelector
-                        value={stringSliceValues[field.name].map((value) => ({
-                          value: value,
-                          label: value,
-                        }))}
-                        creatable
-                        onChange={(value) => {
-                          let values = [];
-                          for (const v of value) {
-                            values.push(v.value.toString());
-                          }
-                          setValue(field.name, values);
-                        }}
-                      />
-                    </>
-                  )}
-                  {field.type === "dateTime" && (
-                    <>
-                      <input
-                        type="hidden"
-                        {...register(field.name, {
-                          value: field.dateTimeValue,
-                        })}
-                      />
-                      <DateTimePicker
-                        hourCycle={12}
-                        value={
-                          field.dateTimeValue
-                            ? new Date(field.dateTimeValue)
-                            : undefined
-                        }
-                        onChange={(date) => {
-                          if (date) {
-                            setValue(field.name, date.toISOString());
-                          }
-                        }}
-                      />
-                    </>
-                  )}
-                </div>
-              );
-            })}
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold">Post ID</h2>
+            <p className="font-mono">{post.id}</p>
           </div>
 
           <div>
-            <label htmlFor="blocks">Content</label>
-            <hr className="my-4" />
-            <textarea
-              id="blocks"
-              {...register("blocks", { value: blocks })}
-              className="hidden"
-            />
-            <EditorComponent
-              blocks={initialBlockState}
-              onChange={(blocks: OutputBlockData[]) => {
-                setValue("blocks", blocks);
-              }}
-            />
+            <h2 className="text-lg font-semibold">Site</h2>
+            <p>{siteName}</p>
           </div>
-          <Button type="submit">Save changes</Button>
-        </form>
+
+          <form onSubmit={handleSubmitForm(handleSubmit)} className="space-y-8">
+            <div className="space-y-4">
+              {Object.values(post.frontmatter).map((field) => {
+                return (
+                  <div key={field.name}>
+                    {field.type !== "bool" && (
+                      <label
+                        htmlFor={field.name}
+                        className="mb-2 flex flex-col"
+                      >
+                        {field.name}
+                      </label>
+                    )}
+                    {field.type === "string" && (
+                      <Input
+                        id={field.name}
+                        {...register(field.name, {
+                          value: field.stringValue,
+                        })}
+                      />
+                    )}
+                    {field.type === "bool" && (
+                      <>
+                        <Checkbox
+                          id={field.name}
+                          {...register(field.name, {
+                            value: field.boolValue,
+                          })}
+                        />
+                        <label htmlFor={field.name} className="mb-2 ml-2">
+                          {field.name}
+                        </label>
+                      </>
+                    )}
+                    {field.type === "number" && (
+                      <Input
+                        id={field.name}
+                        {...register(field.name, {
+                          value: field.numberValue,
+                        })}
+                      />
+                    )}
+                    {field.type === "stringSlice" && (
+                      <>
+                        <select
+                          {...register(field.name, {
+                            value: stringSliceValues[field.name],
+                          })}
+                          multiple
+                          className="hidden"
+                        >
+                          {stringSliceValues[field.name].map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                        <MultipleSelector
+                          value={stringSliceValues[field.name].map((value) => ({
+                            value: value,
+                            label: value,
+                          }))}
+                          creatable
+                          onChange={(value) => {
+                            let values = [];
+                            for (const v of value) {
+                              values.push(v.value.toString());
+                            }
+                            setValue(field.name, values);
+                          }}
+                        />
+                      </>
+                    )}
+                    {field.type === "dateTime" && (
+                      <>
+                        <input
+                          type="hidden"
+                          {...register(field.name, {
+                            value: field.dateTimeValue,
+                          })}
+                        />
+                        <DateTimePicker
+                          hourCycle={12}
+                          value={
+                            field.dateTimeValue
+                              ? new Date(field.dateTimeValue)
+                              : undefined
+                          }
+                          onChange={(date) => {
+                            if (date) {
+                              setValue(field.name, date.toISOString());
+                            }
+                          }}
+                        />
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div>
+              <label htmlFor="blocks">Content</label>
+              <hr className="my-4" />
+              <textarea
+                id="blocks"
+                {...register("blocks", { value: blocks })}
+                className="hidden"
+              />
+              <EditorComponent
+                blocks={initialBlockState}
+                onChange={(blocks: OutputBlockData[]) => {
+                  setValue("blocks", blocks);
+                }}
+              />
+            </div>
+            <Button type="submit">Save changes</Button>
+          </form>
+        </div>
       </div>
-    </div>
+      <Toaster />
+    </>
   );
 }
 

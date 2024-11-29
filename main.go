@@ -123,6 +123,7 @@ func main() {
 	registry.ApiRegister(api_handlers.NewGitHubRepositoriesHandler(config))
 	registry.ApiRegister(api_handlers.NewPostsHandler(config))
 	registry.ApiRegister(api_handlers.NewPostHandler(config))
+	registry.ApiRegister(api_handlers.NewSavePostHandler(config))
 
 	server := &http.Server{
 		Addr:    ":8080",

@@ -61,7 +61,7 @@ export async function login(email: string, password: string): Promise<string> {
 
 export async function createAccount(
   email: string,
-  password: string
+  password: string,
 ): Promise<void> {
   const response = await fetch(`${API_BASE}/api/accounts`, {
     method: "PUT",
@@ -108,10 +108,10 @@ export async function getGitHubOrganizations(): Promise<Organization[]> {
 }
 
 export async function getGitHubRepositories(
-  org: string
+  org: string,
 ): Promise<Repository[]> {
   const response = await fetchWithAuth(
-    `/api/github/organizations/${org}/repositories`
+    `/api/github/organizations/${org}/repositories`,
   );
   return response.json();
 }
@@ -148,4 +148,22 @@ export async function getPosts(siteId: string): Promise<Post[]> {
 export async function getPost(siteId: string, postId: string): Promise<Post> {
   const response = await fetchWithAuth(`/api/sites/${siteId}/posts/${postId}`);
   return response.json();
+}
+
+export async function savePost(
+  siteId: string,
+  postId: string,
+  post: Post,
+): Promise<void> {
+  const response = await fetchWithAuth(`/api/sites/${siteId}/posts/${postId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(post),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to save post");
+  }
 }
