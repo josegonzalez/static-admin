@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "next lint"
   },
+  "engines": {
+    "node": "22.11.0"
+  },
   "dependencies": {
     "@calumk/editorjs-codecup": "^1.2.0",
     "@coolbytes/editorjs-delimiter": "^1.0.3",
