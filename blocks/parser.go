@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	htmltomarkdown "github.com/JohannesKaufmann/html-to-markdown/v2"
-	"github.com/JohannesKaufmann/html-to-markdown/v2/converter"
 	elem "github.com/chasefleming/elem-go"
 	"github.com/chasefleming/elem-go/attrs"
 )
@@ -65,11 +64,14 @@ func ParseBlocksToMarkdown(blocks []Block, options ...MarkdownOption) (string, e
 	var buffer bytes.Buffer
 
 	for _, block := range blocks {
-		handler := blockHandlers[block.Type]
-		if handler != nil {
-			if err := handler(&buffer, block.Data, mdOptions); err != nil {
-				return "", fmt.Errorf("error handling block type %s: %w", block.Type, err)
-			}
+		handler, ok := blockHandlers[block.Type]
+		if !ok {
+			return "", fmt.Errorf("no handler found for block type %s", block.Type)
+		}
+
+		err := handler(&buffer, block.Data, mdOptions)
+		if err != nil {
+			return "", fmt.Errorf("error handling block type %s: %w", block.Type, err)
 		}
 	}
 
@@ -78,15 +80,15 @@ func ParseBlocksToMarkdown(blocks []Block, options ...MarkdownOption) (string, e
 
 // blockHandlers maps block types to their corresponding handler functions.
 var blockHandlers = map[string]func(*bytes.Buffer, map[string]interface{}, *MarkdownOptions) error{
-	"image":          handleImage,
-	"paragraph":      handleParagraph,
-	"heading":        handleHeading,
-	"list":           handleList,
-	"code":           handleCode,
-	"quote":          handleQuote,
-	"table":          handleTable,
-	"alert":          handleAlert,
-	"thematic_break": handleThematicBreak,
+	"image":     handleImage,
+	"paragraph": handleParagraph,
+	"header":    handleHeader,
+	"list":      handleList,
+	"code":      handleCode,
+	"quote":     handleQuote,
+	"table":     handleTable,
+	"alert":     handleAlert,
+	"delimiter": handleDelimiter,
 }
 
 // Handlers for individual block types
@@ -98,13 +100,18 @@ func handleParagraph(buffer *bytes.Buffer, data map[string]interface{}, opts *Ma
 	return nil
 }
 
-func handleHeading(buffer *bytes.Buffer, data map[string]interface{}, opts *MarkdownOptions) error {
-	if text, ok := data["text"].(string); ok {
-		if level, ok := data["level"].(float64); ok {
-			markdownText := convertToMarkdown(text)
-			buffer.WriteString(strings.Repeat("#", int(level)) + " " + markdownText + "\n\n")
-		}
+func handleHeader(buffer *bytes.Buffer, data map[string]interface{}, opts *MarkdownOptions) error {
+	text, textOk := data["text"].(string)
+	level, levelOk := data["level"].(float64)
+	if !textOk {
+		return fmt.Errorf("missing or invalid 'text' in heading block")
 	}
+	if !levelOk {
+		return fmt.Errorf("missing or invalid 'level' in heading block")
+	}
+
+	markdownText := convertToMarkdown(text)
+	buffer.WriteString(strings.Repeat("#", int(level)) + " " + markdownText + "\n\n")
 	return nil
 }
 
@@ -123,7 +130,12 @@ func handleList(buffer *bytes.Buffer, data map[string]interface{}, opts *Markdow
 	meta, _ := data["meta"].(map[string]interface{})
 
 	// Process the list items based on style
-	return processList(buffer, items, style, meta, 0)
+	if err := processList(buffer, items, style, meta, 0); err != nil {
+		return fmt.Errorf("error processing list: %w", err)
+	}
+
+	buffer.WriteString("\n")
+	return nil
 }
 
 // Helper to process a list
@@ -258,7 +270,7 @@ func handleQuote(buffer *bytes.Buffer, data map[string]interface{}, opts *Markdo
 	if text, ok := data["text"].(string); ok {
 		markdownText := convertToMarkdown(text)
 		buffer.WriteString("> " + markdownText + "\n")
-		if caption, exists := data["caption"].(string); exists {
+		if caption, exists := data["caption"].(string); exists && caption != "" {
 			captionMarkdown := convertToMarkdown(caption)
 			buffer.WriteString("> \n> -- <caption>" + captionMarkdown + "</caption>\n")
 		}
@@ -296,7 +308,7 @@ func handleTable(buffer *bytes.Buffer, data map[string]interface{}, opts *Markdo
 	return nil
 }
 
-func handleThematicBreak(buffer *bytes.Buffer, data map[string]interface{}, opts *MarkdownOptions) error {
+func handleDelimiter(buffer *bytes.Buffer, data map[string]interface{}, opts *MarkdownOptions) error {
 	buffer.WriteString("---\n\n")
 	return nil
 }
@@ -304,7 +316,6 @@ func handleThematicBreak(buffer *bytes.Buffer, data map[string]interface{}, opts
 func convertToMarkdown(htmlText string) string {
 	markdown, err := htmltomarkdown.ConvertString(
 		htmlText,
-		converter.WithDomain("https://localhost:3000"),
 	)
 	if err != nil {
 		println("Error converting to markdown:", err)
