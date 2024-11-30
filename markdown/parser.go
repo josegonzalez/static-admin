@@ -458,17 +458,6 @@ func handleParagraph(node *ast.Paragraph, markdown string, config *ParseConfig) 
 		}
 	}
 
-	// Add inline-code class to all code elements
-	if strings.Contains(text, "<code>") {
-		doc, err := goquery.NewDocumentFromReader(strings.NewReader(text))
-		if err == nil {
-			doc.Find("code").AddClass("inline-code")
-			if html, err := doc.Html(); err == nil {
-				text = html
-			}
-		}
-	}
-
 	return blocks.Block{
 		Type: "paragraph",
 		Data: map[string]interface{}{
@@ -522,6 +511,17 @@ func markdownToHTML(markdown string) (string, error) {
 	if strings.HasPrefix(content, "<p>") && strings.HasSuffix(content, "</p>") {
 		// Remove surrounding <p> tags
 		content = content[3 : len(content)-4]
+	}
+
+	// Add inline-code class to all code elements
+	if strings.Contains(content, "<code>") {
+		doc, err := goquery.NewDocumentFromReader(strings.NewReader(content))
+		if err == nil {
+			doc.Find("code").AddClass("inline-code")
+			if html, err := doc.Html(); err == nil {
+				content = html
+			}
+		}
 	}
 
 	return content, nil
