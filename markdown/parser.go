@@ -531,24 +531,24 @@ func markdownToHTML(markdown string) (string, error) {
 	return content, nil
 }
 
-func extractNodeText(node ast.Node, markdown string) string {
+func extractNodeText(node ast.Node, fullMarkdownDocument string) string {
 	var buf bytes.Buffer
 	if node.Type() == ast.TypeBlock {
 		if node.Lines() == nil {
 			return ""
 		}
 
-		lines := node.Lines() // Get the lines of text for the node
+		lines := node.Lines()
 		for i := 0; i < lines.Len(); i++ {
 			line := lines.At(i)
-			buf.Write(line.Value([]byte(markdown))) // Append each line to the buffer
+			buf.Write(line.Value([]byte(fullMarkdownDocument)))
 		}
 		buf.WriteString("\n")
 	}
 
 	if node.Kind() != ast.KindList {
 		for c := node.FirstChild(); c != nil; c = c.NextSibling() {
-			buf.Write([]byte(extractNodeText(c, markdown)))
+			buf.Write([]byte(extractNodeText(c, fullMarkdownDocument)))
 			buf.WriteString("\n")
 		}
 	}
