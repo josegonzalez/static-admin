@@ -1,6 +1,7 @@
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getSites } from "@/lib/api";
 import { Site } from "@/types/site";
+import { LogOut } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -91,6 +93,18 @@ export default function DashboardLayout({
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
+          <SidebarFooter>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/logout" className="flex items-center gap-2">
+                    <span>Logout</span>
+                    <LogOut className="h-4 w-4" />
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
         </Sidebar>
         <main className="flex-1 p-6 overflow-auto">{children}</main>
       </div>
