@@ -86,7 +86,6 @@ func ParseMarkdownToBlocks(markdown string, opts ...ParseOption) ([]blocks.Block
 
 	var blocks []blocks.Block
 
-	// Initialize Goldmark parser with TaskList extension
 	reader := text.NewReader([]byte(markdown))
 	document := MarkdownParser.Parser().Parse(reader)
 
