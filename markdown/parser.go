@@ -222,6 +222,11 @@ func extractListItems(list *ast.List, markdown string, depth, maxDepth int) ([]m
 				}
 			}
 
+			htmlText, err := markdownToHTML(text)
+			if err == nil {
+				text = htmlText
+			}
+
 			itemData := map[string]interface{}{
 				"content": text,
 				"items":   children,
