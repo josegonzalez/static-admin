@@ -5,7 +5,6 @@ import (
 
 	"static-admin/config"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	zgithub "github.com/zalando/gin-oauth2/github"
 	"golang.org/x/oauth2"
@@ -44,17 +43,4 @@ type GithubUser struct {
 
 func init() {
 	gob.Register(GithubUser{})
-}
-
-func GithubAuth() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		// Handle the exchange code to initiate a transport.
-		session := sessions.Default(ctx)
-		mysession := session.Get("ginoauthgh")
-		if githubUser, ok := mysession.(GithubUser); ok {
-			ctx.Set("githubUser", githubUser)
-		}
-
-		ctx.Next()
-	}
 }

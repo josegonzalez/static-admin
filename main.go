@@ -14,7 +14,6 @@ import (
 	"static-admin/config"
 	"static-admin/database"
 	"static-admin/github"
-	"static-admin/handlers"
 	api_handlers "static-admin/handlers/api"
 	auth_handlers "static-admin/handlers/auth"
 	"static-admin/middleware"
@@ -84,8 +83,6 @@ func main() {
 	middleware.Github(config)
 
 	r := gin.Default()
-	r.Use(middleware.Session(config.SessionSecret))
-	r.Use(middleware.GithubAuth())
 
 	r.SetHTMLTemplate(template.Must(template.ParseFS(staticFiles, "assets/*.html")))
 	r.StaticFS("/static", http.FS(staticFiles))
@@ -102,14 +99,20 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+	apiUnauthenticated.Use(middleware.User(middleware.UserMiddleware{
+		Database:  db,
+		JWTSecret: []byte(config.JWTSecret),
+		IgnoredPaths: []string{
+			"/auth/github/callback",
+			"/api/login",
+			"/api/register",
+		},
+	}))
 
 	auth := r.Group("/")
 	// auth.Use(middleware.Auth(db, []byte(config.JWTSecret)))
 
 	registry := &Registry{Engine: r, AuthGroup: auth, ApiGroup: apiUnauthenticated}
-
-	registry.Register(handlers.NewLoginHandler(config))
-	registry.Register(handlers.NewRegisterHandler(config))
 
 	registry.AuthRegister(auth_handlers.NewGithubCallbackHandler(config))
 	registry.ApiRegister(api_handlers.NewLoginHandler(config))

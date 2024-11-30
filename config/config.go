@@ -27,9 +27,6 @@ type Config struct {
 	// JWTSecret is the secret used to sign the JWT tokens
 	JWTSecret string
 
-	// SessionSecret is the secret used to encrypt the session
-	SessionSecret string
-
 	// StaticFiles is the embedded static files
 	StaticFiles embed.FS
 }
@@ -42,7 +39,6 @@ func NewConfig(database *gorm.DB, staticFiles embed.FS) Config {
 		GithubClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
 		GithubScopes:       []string{"repo", "read:user"},
 		JWTSecret:          os.Getenv("JWT_SECRET"),
-		SessionSecret:      os.Getenv("SESSION_SECRET"),
 		StaticFiles:        staticFiles,
 	}
 
@@ -60,10 +56,6 @@ func NewConfig(database *gorm.DB, staticFiles embed.FS) Config {
 
 	if config.JWTSecret == "" {
 		log.Fatal("JWT_SECRET environment variable is required")
-	}
-
-	if config.SessionSecret == "" {
-		log.Fatal("SESSION_SECRET environment variable is required")
 	}
 
 	return config

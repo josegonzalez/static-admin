@@ -1,6 +1,8 @@
 package database
 
 import (
+	"errors"
+
 	"gorm.io/gorm"
 )
 
@@ -12,4 +14,18 @@ type Site struct {
 	Description   string
 	DefaultBranch string `gorm:"not null"`
 	Private       bool   `gorm:"not null"`
+}
+
+// GetSite retrieves the site from the database
+func GetSite(db *gorm.DB, siteID string, user User) (Site, error) {
+	var site Site
+	if err := db.Where("id = ? AND user_id = ?", siteID, user.ID).First(&site).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return site, errors.New("site not found")
+		}
+
+		return site, errors.New("failed to fetch site details")
+	}
+
+	return site, nil
 }

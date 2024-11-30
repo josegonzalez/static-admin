@@ -5,10 +5,10 @@ import (
 	"static-admin/config"
 	"static-admin/database"
 	"static-admin/github"
+	"static-admin/middleware"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
 	"gorm.io/gorm"
 )
 
@@ -41,6 +41,22 @@ func (h CreateSiteHandler) GroupRegister(r *gin.RouterGroup) {
 
 // handler handles the PUT request for site creation
 func (h CreateSiteHandler) handler(c *gin.Context) {
+	user, ok := middleware.GetUser(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Invalid token",
+		})
+		return
+	}
+
+	githubAuth, exists := middleware.GetGitHubAuth(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Invalid token",
+		})
+		return
+	}
+
 	var req CreateSiteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -57,54 +73,9 @@ func (h CreateSiteHandler) handler(c *gin.Context) {
 		return
 	}
 
-	// Extract bearer token
-	authHeader := c.GetHeader("Authorization")
-	if !strings.HasPrefix(authHeader, "Bearer ") {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Missing bearer token",
-		})
-		return
-	}
-	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-
-	// Parse and validate token
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return h.JWTSecret, nil
-	})
-	if err != nil || !token.Valid {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Invalid token",
-		})
-		return
-	}
-
-	// Extract user ID from claims
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to process token",
-		})
-		return
-	}
-
-	userID, ok := claims["user_id"].(float64)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Invalid user ID in token",
-		})
-		return
-	}
-	var githubAuth database.GitHubAuth
-	if err := h.Database.Where("user_id = ?", uint(userID)).First(&githubAuth).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "GitHub authentication required",
-		})
-		return
-	}
-
 	// Check if site already exists
 	var existingSite database.Site
-	result := h.Database.Where("user_id = ? AND repository_url = ?", uint(userID), req.RepositoryURL).First(&existingSite)
+	result := h.Database.Where("user_id = ? AND repository_url = ?", user.ID, req.RepositoryURL).First(&existingSite)
 	if result.Error == nil {
 		c.JSON(http.StatusConflict, gin.H{
 			"error": "Site already exists",
@@ -131,7 +102,7 @@ func (h CreateSiteHandler) handler(c *gin.Context) {
 
 	// Create new site
 	site := database.Site{
-		UserID:        uint(userID),
+		UserID:        user.ID,
 		RepositoryURL: repo.HtmlURL,
 		Description:   repo.Description,
 		DefaultBranch: repo.DefaultBranch,

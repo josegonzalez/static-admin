@@ -9,10 +9,10 @@ import (
 	"static-admin/database"
 	"static-admin/github"
 	"static-admin/markdown"
+	"static-admin/middleware"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
 	"github.com/gosimple/slug"
 	"gorm.io/gorm"
 )
@@ -55,65 +55,30 @@ func (h SavePostHandler) GroupRegister(r *gin.RouterGroup) {
 
 // handler handles the POST request for saving post content
 func (h SavePostHandler) handler(c *gin.Context) {
-	// Extract bearer token
-	authHeader := c.GetHeader("Authorization")
-	if !strings.HasPrefix(authHeader, "Bearer ") {
+	user, exists := middleware.GetUser(c)
+	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Missing bearer token",
+			"error": "User not found",
 		})
 		return
 	}
-	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-	// Parse and validate token
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return h.JWTSecret, nil
-	})
-	if err != nil || !token.Valid {
+	githubAuth, exists := middleware.GetGitHubAuth(c)
+	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Invalid token",
-		})
-		return
-	}
-
-	// Extract user ID from claims
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to process token",
-		})
-		return
-	}
-
-	userID, ok := claims["user_id"].(float64)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Invalid user ID in token",
+			"error": "GitHub authentication required",
 		})
 		return
 	}
 
 	// Get site ID and post ID from URL
 	siteID := c.Param("siteId")
-	postID := c.Param("postId")
-	if siteID == "" || postID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Site ID and Post ID are required",
-		})
-		return
-	}
 
 	// Verify site ownership
-	var site database.Site
-	if err := h.Database.Where("id = ? AND user_id = ?", siteID, uint(userID)).First(&site).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Site not found",
-			})
-			return
-		}
+	site, err := database.GetSite(h.Database, siteID, user)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to fetch site details",
+			"error": err.Error(),
 		})
 		return
 	}
@@ -154,15 +119,6 @@ func (h SavePostHandler) handler(c *gin.Context) {
 	}
 
 	fullMarkdown := frontmatterYaml + "\n" + contentMarkdown + "\n"
-
-	// Get GitHub auth details
-	var githubAuth database.GitHubAuth
-	if err := h.Database.Where("user_id = ?", uint(userID)).First(&githubAuth).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "GitHub authentication required",
-		})
-		return
-	}
 
 	// Extract owner and repo from repository URL
 	urlParts := strings.Split(site.RepositoryURL, "/")

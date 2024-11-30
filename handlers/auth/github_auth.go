@@ -9,7 +9,6 @@ import (
 	"static-admin/database"
 	"static-admin/middleware"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/golang/glog"
@@ -36,19 +35,11 @@ func (h GithubCallbackHandler) GroupRegister(auth *gin.RouterGroup) {
 	auth.GET("/auth/github/callback", h.handler)
 }
 
-func (h GithubCallbackHandler) clearSession(c *gin.Context) {
-	session := sessions.Default(c)
-	session.Clear()
-	_ = session.Save()
-	c.SetCookie("jwt", "", -1, "/", "", false, true)
-}
-
 // handler handles the request for the page
 func (h GithubCallbackHandler) handler(c *gin.Context) {
 	// Check for JWT token in session
 	tokenString := c.Query("state")
 	if tokenString == "" {
-		h.clearSession(c)
 		c.Redirect(http.StatusFound, "/login")
 		return
 	}
@@ -58,7 +49,6 @@ func (h GithubCallbackHandler) handler(c *gin.Context) {
 		return h.JWTSecret, nil
 	})
 	if err != nil || !token.Valid {
-		h.clearSession(c)
 		c.Redirect(http.StatusFound, "/login")
 		return
 	}

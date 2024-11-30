@@ -4,10 +4,8 @@ import (
 	"net/http"
 	"static-admin/config"
 	"static-admin/middleware"
-	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
 )
 
 // GitHubAuthURLResponse represents the JSON response containing the GitHub auth URL
@@ -37,29 +35,16 @@ func (h GitHubAuthURLHandler) GroupRegister(r *gin.RouterGroup) {
 
 // handler handles the GET request for GitHub auth URL
 func (h GitHubAuthURLHandler) handler(c *gin.Context) {
-	// Extract bearer token
-	authHeader := c.GetHeader("Authorization")
-	if !strings.HasPrefix(authHeader, "Bearer ") {
+	jwtToken, ok := middleware.GetJWTToken(c)
+	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Missing bearer token",
-		})
-		return
-	}
-	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-
-	// Validate JWT token
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return h.JWTSecret, nil
-	})
-	if err != nil || !token.Valid {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid token",
+			"error": "Missing JWT token",
 		})
 		return
 	}
 
 	// Get GitHub auth URL
-	url := middleware.GetLoginURL(c, tokenString)
+	url := middleware.GetLoginURL(c, jwtToken)
 	c.JSON(http.StatusOK, GitHubAuthURLResponse{
 		URL: url,
 	})

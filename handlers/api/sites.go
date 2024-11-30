@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"static-admin/config"
 	"static-admin/database"
+	"static-admin/middleware"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
 	"gorm.io/gorm"
 )
 
@@ -46,47 +46,17 @@ func (h SitesHandler) GroupRegister(r *gin.RouterGroup) {
 
 // handler handles the GET request for sites
 func (h SitesHandler) handler(c *gin.Context) {
-	// Extract bearer token
-	authHeader := c.GetHeader("Authorization")
-	if !strings.HasPrefix(authHeader, "Bearer ") {
+	user, exists := middleware.GetUser(c)
+	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Missing bearer token",
-		})
-		return
-	}
-	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-
-	// Parse and validate token
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return h.JWTSecret, nil
-	})
-	if err != nil || !token.Valid {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Invalid token",
-		})
-		return
-	}
-
-	// Extract user ID from claims
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to process token",
-		})
-		return
-	}
-
-	userID, ok := claims["user_id"].(float64)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Invalid user ID in token",
+			"error": "User not found",
 		})
 		return
 	}
 
 	// Fetch sites for user
 	var sites []database.Site
-	if err := h.Database.Where("user_id = ?", uint(userID)).Find(&sites).Error; err != nil {
+	if err := h.Database.Where("user_id = ?", user.ID).Find(&sites).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to fetch sites",
 		})
