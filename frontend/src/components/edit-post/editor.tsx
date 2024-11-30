@@ -58,9 +58,13 @@ export function EditorComponent({ blocks, onChange }: EditorProps) {
           });
       }
     },
+    placeholder: "Write something...",
     tools: {
       alert: Alert,
-      code: editorjsCodecup,
+      code: {
+        class: editorjsCodecup,
+        shortcut: "CMD+SHIFT+D",
+      },
       delimiter: {
         class: Delimiter,
         config: {
@@ -73,20 +77,36 @@ export function EditorComponent({ blocks, onChange }: EditorProps) {
       },
       inlineCode: {
         class: InlineCode,
+        shortcut: "CMD+SHIFT+C",
       },
-      header: Header,
-      image: ImageTool,
-      list: EditorjsList,
+      header: {
+        class: Header,
+        inlineToolbar: true,
+      },
+      image: {
+        class: ImageTool,
+        inlineToolbar: true,
+      },
+      list: {
+        class: EditorjsList,
+        inlineToolbar: true,
+      },
       raw: RawTool,
-      quote: Quote,
-      table: Table,
+      quote: {
+        class: Quote,
+        inlineToolbar: true,
+      },
+      table: {
+        class: Table,
+        inlineToolbar: true,
+      },
     },
   };
 
   // This will run only once
   useEffect(() => {
     if (!isReady.current) {
-      editorRef.current = new EditorJS(editorConfig);
+      editorRef.current = new EditorJS(editorConfig as any);
       isReady.current = true;
     }
   }, []);
