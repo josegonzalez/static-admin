@@ -1,4 +1,5 @@
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
+import { toast } from "@/hooks/use-toast";
 import DashboardLayout from "@/layouts/dashboard-layout";
 import { getGitHubAuthUrl, revalidateToken } from "@/lib/api";
 import { isAuthenticatedToGitHub } from "@/lib/auth";
@@ -32,6 +33,10 @@ export default function DashboardPage() {
           setGithubAuthUrl(url);
         }
       } catch (err) {
+        toast({
+          title: "Failed to authenticate with GitHub",
+          description: "Error: " + err,
+        });
         localStorage.removeItem("token");
         router.push("/login");
         return;

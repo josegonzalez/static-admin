@@ -13,6 +13,7 @@ import {
   SidebarMenuSubItem,
   SidebarProvider,
 } from "@/components/ui/sidebar";
+import { toast } from "@/hooks/use-toast";
 import { getSites } from "@/lib/api";
 import { Site } from "@/types/site";
 import { LogOut } from "lucide-react";
@@ -25,7 +26,6 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [sites, setSites] = useState<Site[]>([]);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSites = async () => {
@@ -33,7 +33,10 @@ export default function DashboardLayout({
         const fetchedSites = await getSites();
         setSites(fetchedSites);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch sites");
+        toast({
+          title: "Failed to fetch sites",
+          description: err instanceof Error ? err.message : "Unknown error",
+        });
       }
     };
 

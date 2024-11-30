@@ -9,7 +9,7 @@ export function NoSitesAlert() {
       <AlertCircle className="h-4 w-4" />
       <AlertTitle>No Sites Configured</AlertTitle>
       <AlertDescription>
-        You haven't configured any sites yet. Go to the configuration page to
+        You have not configured any sites yet. Go to the configuration page to
         add sites.
         <p>
           <Button

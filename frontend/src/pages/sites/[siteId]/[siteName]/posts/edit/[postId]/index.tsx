@@ -16,7 +16,6 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { FieldValues, useForm } from "react-hook-form";
-import * as z from "zod";
 
 const DEFAULT_POST: Post = {
   id: "",
@@ -25,16 +24,10 @@ const DEFAULT_POST: Post = {
   blocks: [],
 };
 
-const formSchema = z.object({
-  path: z.string().min(1, "Path is required"),
-  frontmatter: z.record(z.unknown()),
-  blocks: z.array(z.any()),
-});
-
 export default function EditPostPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const { siteId, siteName, postId } = router.query;
+  const { siteId, postId } = router.query;
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,12 +42,7 @@ export default function EditPostPage() {
     { ssr: false },
   );
 
-  const {
-    register,
-    handleSubmit: handleSubmitForm,
-    setValue,
-    formState: { errors },
-  } = useForm();
+  const { register, handleSubmit: handleSubmitForm, setValue } = useForm();
 
   const [stringSliceValues, setStringSliceValues] = useState<
     Record<string, string[]>
@@ -69,11 +57,11 @@ export default function EditPostPage() {
         setBlocks(postData.blocks);
         setInitialBlockState(postData.blocks);
 
-        let initialStringSliceValues: Record<string, string[]> = {};
+        const initialStringSliceValues: Record<string, string[]> = {};
         for (const key in postData.frontmatter) {
           const field = postData.frontmatter[key];
           if (field.type === "stringSlice") {
-            let values = [];
+            const values = [];
             for (const value of field.stringSliceValue) {
               values.push(value.toString());
             }
@@ -113,7 +101,7 @@ export default function EditPostPage() {
 
     for (const key in post.frontmatter) {
       const fieldName = post.frontmatter[key].name;
-      let field: FrontmatterField = {
+      const field: FrontmatterField = {
         name: fieldName,
         type: post.frontmatter[key].type,
         stringValue: "",
@@ -149,7 +137,7 @@ export default function EditPostPage() {
       const response = await savePost(siteId, postId, newPost);
       toast({
         title: "Success",
-        description: "Post saved successfully",
+        description: `Post saved successfully. See <a href="${response.prUrl}" target="_blank">${response.prUrl}</a> for details.`,
         variant: "default",
       });
     } catch (err) {
@@ -252,7 +240,7 @@ export default function EditPostPage() {
                           }))}
                           creatable
                           onChange={(value) => {
-                            let values = [];
+                            const values = [];
                             for (const v of value) {
                               values.push(v.value.toString());
                             }
