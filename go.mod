@@ -10,7 +10,7 @@ require (
 	github.com/gin-contrib/sessions v1.0.1
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
-	github.com/golang/glog v1.2.2
+	github.com/golang/glog v1.2.3
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/gosimple/slug v1.14.0
 	github.com/jxskiss/base62 v1.1.0
