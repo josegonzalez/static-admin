@@ -1,10 +1,10 @@
-// @ts-ignore
+// @ts-expect-error: editorjs-delimiter does not use typescript
 import Delimiter from "@coolbytes/editorjs-delimiter";
-// @ts-ignore
+// @ts-expect-error: editorjs-codecup does not use typescript
 import editorjsCodecup from "@calumk/editorjs-codecup";
 import InlineCode from "@editorjs/inline-code";
 
-import EditorJS, { BlockMutationEvent } from "@editorjs/editorjs";
+import EditorJS, { BlockMutationEvent, EditorConfig } from "@editorjs/editorjs";
 import {
   OutputBlockData,
   OutputData,
@@ -13,10 +13,10 @@ import Header from "@editorjs/header";
 import ImageTool from "@editorjs/image";
 import EditorjsList from "@editorjs/list";
 import Quote from "@editorjs/quote";
-// @ts-ignore
+// @ts-expect-error: editorjs-raw does not use typescript
 import RawTool from "@editorjs/raw";
 import Table from "@editorjs/table";
-// @ts-ignore
+// @ts-expect-error: editorjs-alert does not use typescript
 import Alert from "editorjs-alert";
 import { useEffect, useRef } from "react";
 
@@ -37,6 +37,7 @@ export function EditorComponent({ blocks, onChange }: EditorProps) {
     },
     minHeight: 100,
     onChange: async (
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       _: any,
       event: BlockMutationEvent | BlockMutationEvent[],
     ) => {
@@ -106,10 +107,11 @@ export function EditorComponent({ blocks, onChange }: EditorProps) {
   // This will run only once
   useEffect(() => {
     if (!isReady.current) {
-      editorRef.current = new EditorJS(editorConfig as any);
+      // @ts-expect-error: certain tools are not typed
+      editorRef.current = new EditorJS(editorConfig as EditorConfig);
       isReady.current = true;
     }
-  }, []);
+  });
 
   return <div id="editorjs" />;
 }

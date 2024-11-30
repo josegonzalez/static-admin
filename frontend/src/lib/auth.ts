@@ -1,4 +1,4 @@
-import { jwtDecode } from "jwt-decode";
+import { InvalidTokenError, jwtDecode } from "jwt-decode";
 
 interface JWTClaims {
   github_auth?: boolean;
@@ -13,6 +13,10 @@ export function isAuthenticatedToGitHub(): boolean {
     const claims = jwtDecode<JWTClaims>(token);
     return claims.github_auth === true;
   } catch (err) {
-    return false;
+    if (err instanceof InvalidTokenError) {
+      console.error(err);
+      return false;
+    }
+    throw err;
   }
 }

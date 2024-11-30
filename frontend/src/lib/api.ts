@@ -1,4 +1,5 @@
 import { Post } from "@/types/post";
+import { SavePostResponse } from "@/types/save-post-response";
 import { Site } from "@/types/site";
 
 const API_BASE = "http://localhost:8080";
@@ -154,7 +155,7 @@ export async function savePost(
   siteId: string,
   postId: string,
   post: Post,
-): Promise<void> {
+): Promise<SavePostResponse> {
   const response = await fetchWithAuth(`/api/sites/${siteId}/posts/${postId}`, {
     method: "POST",
     headers: {
@@ -166,4 +167,5 @@ export async function savePost(
   if (!response.ok) {
     throw new Error("Failed to save post");
   }
+  return response.json();
 }
