@@ -10,10 +10,11 @@ RUN npm run build
 FROM golang:1.23-alpine AS backend-builder
 WORKDIR /app
 RUN apk add --no-cache git
-COPY --from=frontend-builder /app/frontend/out /app/frontend/out
-COPY . .
-RUN go generate ./...
+COPY go.mod go.sum ./
 RUN go mod download
+COPY . .
+COPY --from=frontend-builder /app/frontend/out /app/frontend/out
+RUN go generate ./...
 RUN CGO_ENABLED=0 GOOS=linux go build -o /static-admin
 
 # Stage 3: Final stage
