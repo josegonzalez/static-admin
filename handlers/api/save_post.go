@@ -11,6 +11,7 @@ import (
 	"static-admin/markdown"
 	"static-admin/middleware"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gosimple/slug"
@@ -51,6 +52,7 @@ type SavePostHandler struct {
 // GroupRegister registers the handler with the given router group
 func (h SavePostHandler) GroupRegister(r *gin.RouterGroup) {
 	r.POST("/sites/:siteId/posts/:postId", h.handler)
+	r.PUT("/sites/:siteId/posts/:postId", h.handler)
 }
 
 // handler handles the POST request for saving post content
@@ -90,6 +92,40 @@ func (h SavePostHandler) handler(c *gin.Context) {
 			"error": "Invalid request format",
 		})
 		return
+	}
+
+	if c.Request.Method == "PUT" {
+		// generate the path as a slug version of the post date and title
+		// make sure to get the date from the frontmatter
+		var date time.Time
+		foundDate := false
+		for _, field := range req.Frontmatter {
+			if field.Name == "date" {
+				date = field.DateTimeValue
+				foundDate = true
+				break
+			}
+		}
+
+		var title string
+		foundTitle := false
+		for _, field := range req.Frontmatter {
+			if field.Name == "title" {
+				title = field.StringValue
+				foundTitle = true
+				break
+			}
+		}
+
+		if !foundDate || !foundTitle {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Date or title not found in frontmatter",
+			})
+			return
+		}
+
+		req.Path = fmt.Sprintf("%s/%s", date.Format("2006-01-02"), slug.Make(title))
+		req.ID = toBase62(req.Path)
 	}
 
 	// decode the id into a path
@@ -133,6 +169,9 @@ func (h SavePostHandler) handler(c *gin.Context) {
 
 	fileName := filepath.Base(path)
 	branchName := fmt.Sprintf("update-%s", slug.Make(fileName))
+	if c.Request.Method == "PUT" {
+		branchName = fmt.Sprintf("create-%s", slug.Make(fileName))
+	}
 
 	err = github.CreateBranchAndUpdateFile(github.CreateBranchAndUpdateFileInput{
 		Owner:      owner,
