@@ -7,8 +7,8 @@ const nextConfig: NextConfig = {
   /* enable static export */
   output: "export",
 
-  /* avoid trailing on dynamic routes */
-  trailingSlash: false,
+  /* avoid redirects on dynamic routes */
+  trailingSlash: true,
 
   /* disable image optimization since the target is CSR */
   images: {
