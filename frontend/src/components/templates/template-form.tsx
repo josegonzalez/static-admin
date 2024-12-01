@@ -41,6 +41,8 @@ export const FIELD_TYPES = [
   { value: "stringSlice", label: "Tags/List" },
 ];
 
+const CurrentDate = new Date().toISOString();
+
 export const DEFAULT_FIELDS: FrontmatterField[] = [
   {
     name: "title",
@@ -48,7 +50,7 @@ export const DEFAULT_FIELDS: FrontmatterField[] = [
     stringValue: "",
     boolValue: false,
     numberValue: 0,
-    dateTimeValue: "",
+    dateTimeValue: "0001-01-01T00:00:00Z",
     stringSliceValue: [],
   },
   {
@@ -57,7 +59,43 @@ export const DEFAULT_FIELDS: FrontmatterField[] = [
     stringValue: "",
     boolValue: false,
     numberValue: 0,
-    dateTimeValue: "",
+    dateTimeValue: CurrentDate,
+    stringSliceValue: [],
+  },
+  {
+    name: "category",
+    type: "string",
+    stringValue: "",
+    boolValue: false,
+    numberValue: 0,
+    dateTimeValue: "0001-01-01T00:00:00Z",
+    stringSliceValue: [],
+  },
+  {
+    name: "tags",
+    type: "stringSlice",
+    stringValue: "",
+    boolValue: false,
+    numberValue: 0,
+    dateTimeValue: "0001-01-01T00:00:00Z",
+    stringSliceValue: [],
+  },
+  {
+    name: "permalink",
+    type: "string",
+    stringValue: "",
+    boolValue: false,
+    numberValue: 0,
+    dateTimeValue: "0001-01-01T00:00:00Z",
+    stringSliceValue: [],
+  },
+  {
+    name: "published",
+    type: "bool",
+    stringValue: "",
+    boolValue: false,
+    numberValue: 0,
+    dateTimeValue: "0001-01-01T00:00:00Z",
     stringSliceValue: [],
   },
 ];

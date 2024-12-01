@@ -88,6 +88,7 @@ func (h PostSaveHandler) handler(c *gin.Context) {
 	// Parse request body
 	var req PostSaveRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		fmt.Println("error", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid request format",
 		})
@@ -124,7 +125,7 @@ func (h PostSaveHandler) handler(c *gin.Context) {
 			return
 		}
 
-		req.Path = fmt.Sprintf("%s/%s", date.Format("2006-01-02"), slug.Make(title))
+		req.Path = fmt.Sprintf("%s-%s.md", date.Format("2006-01-02"), slug.Make(title))
 		req.ID = toBase62(req.Path)
 	}
 
@@ -137,8 +138,21 @@ func (h PostSaveHandler) handler(c *gin.Context) {
 		return
 	}
 
+	// filter out the permalink field if the value is empty
+	fields := req.Frontmatter
+	permalinkIndex := -1
+	for i, field := range fields {
+		if field.Name == "permalink" {
+			permalinkIndex = i
+			break
+		}
+	}
+	if permalinkIndex != -1 {
+		fields = append(fields[:permalinkIndex], fields[permalinkIndex+1:]...)
+	}
+
 	// Generate markdown content
-	frontmatterYaml, err := markdown.FrontmatterFieldToYaml(req.Frontmatter)
+	frontmatterYaml, err := markdown.FrontmatterFieldToYaml(fields)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to generate frontmatter",

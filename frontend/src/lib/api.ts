@@ -158,8 +158,15 @@ export async function savePost(
   postId: string,
   post: Post,
 ): Promise<SavePostResponse> {
-  const response = await fetchWithAuth(`/api/sites/${siteId}/posts/${postId}`, {
-    method: "POST",
+  let url = `/api/sites/${siteId}/posts/${postId}`;
+  let method = "POST";
+  if (postId === "new") {
+    url = `/api/sites/${siteId}/posts`;
+    method = "PUT";
+  }
+
+  const response = await fetchWithAuth(url, {
+    method: method,
     headers: {
       "Content-Type": "application/json",
     },
