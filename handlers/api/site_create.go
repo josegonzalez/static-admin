@@ -12,35 +12,35 @@ import (
 	"gorm.io/gorm"
 )
 
-// CreateSiteRequest represents the JSON data for creating a new site
-type CreateSiteRequest struct {
+// SiteCreateRequest represents the JSON data for creating a new site
+type SiteCreateRequest struct {
 	RepositoryURL string `json:"repository_url" binding:"required"`
 	Description   string `json:"description"`
 	DefaultBranch string `json:"default_branch"`
 	Private       bool   `json:"private"`
 }
 
-// NewCreateSiteHandler creates a new handler for the site creation endpoint
-func NewCreateSiteHandler(config config.Config) (CreateSiteHandler, error) {
-	return CreateSiteHandler{
+// NewSiteCreateHandler creates a new handler for the site creation endpoint
+func NewSiteCreateHandler(config config.Config) (SiteCreateHandler, error) {
+	return SiteCreateHandler{
 		Database:  config.Database,
 		JWTSecret: []byte(config.JWTSecret),
 	}, nil
 }
 
-// CreateSiteHandler handles the site creation request
-type CreateSiteHandler struct {
+// SiteCreateHandler handles the site creation request
+type SiteCreateHandler struct {
 	Database  *gorm.DB
 	JWTSecret []byte
 }
 
 // GroupRegister registers the handler with the given router group
-func (h CreateSiteHandler) GroupRegister(r *gin.RouterGroup) {
+func (h SiteCreateHandler) GroupRegister(r *gin.RouterGroup) {
 	r.PUT("/sites", h.handler)
 }
 
 // handler handles the PUT request for site creation
-func (h CreateSiteHandler) handler(c *gin.Context) {
+func (h SiteCreateHandler) handler(c *gin.Context) {
 	user, ok := middleware.GetUser(c)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -57,7 +57,7 @@ func (h CreateSiteHandler) handler(c *gin.Context) {
 		return
 	}
 
-	var req CreateSiteRequest
+	var req SiteCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid request format",
