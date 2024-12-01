@@ -4,8 +4,6 @@ import { SavePostResponse } from "@/types/save-post-response";
 import { Site } from "@/types/site";
 import { Template } from "@/types/template";
 
-const API_BASE = "http://localhost:8080";
-
 interface LoginResponse {
   token: string;
 }
@@ -35,6 +33,41 @@ interface Repository {
   default_branch: string;
 }
 
+function host(): string {
+  const value = process.env.NEXT_PUBLIC_API_HOSTNAME;
+  if (value !== undefined && value !== "") {
+    return value;
+  }
+
+  if (typeof window !== "undefined") {
+    if (window.location.host === "localhost:3000") {
+      return "localhost:8080";
+    }
+  }
+  return window.location.host;
+}
+
+function scheme(): string {
+  const value = process.env.NEXT_PUBLIC_API_SCHEME;
+  if (value !== undefined && value !== "") {
+    return value;
+  }
+
+  if (typeof window === "undefined") {
+    return "https";
+  }
+
+  if (window.location.protocol === "http:") {
+    return "http";
+  }
+
+  return "https";
+}
+
+function baseUrl(): string {
+  return `${scheme()}://${host()}`;
+}
+
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const token = localStorage.getItem("token");
   if (token) {
@@ -43,13 +76,13 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
       Authorization: `Bearer ${token}`,
     };
   }
-  const response = await fetch(`${API_BASE}${url}`, options);
+  const response = await fetch(`${baseUrl()}${url}`, options);
   if (!response.ok) throw new Error("API request failed");
   return response;
 }
 
 export async function login(email: string, password: string): Promise<string> {
-  const response = await fetch(`${API_BASE}/api/login`, {
+  const response = await fetch(`${baseUrl()}/api/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -66,7 +99,7 @@ export async function createAccount(
   email: string,
   password: string,
 ): Promise<void> {
-  const response = await fetch(`${API_BASE}/api/accounts`, {
+  const response = await fetch(`${baseUrl()}/api/accounts`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
