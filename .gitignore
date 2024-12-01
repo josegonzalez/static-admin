@@ -1,3 +1,4 @@
-static-admin
 .env
 *.db
+embedded_box/*/box.go
+static-admin

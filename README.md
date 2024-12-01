@@ -72,6 +72,47 @@ A modern web interface for managing static site content. Built for GitHub Pages 
 
 3. Visit `http://localhost:3000`
 
+### Deploying
+
+We include a Dockerfile that compiles both the frontend and backend. This can be used to deploy to any Docker-compatible platform, and will respect the `PORT` environment variable. By default, it will run on port 5000.
+
+To use it locally, run the following commands:
+
+1. Build the docker image:
+
+   ```bash
+   docker build -t static-admin .
+   ```
+
+2. Run the docker container:
+
+   ```bash
+   docker run --rm -p 8080:8080 static-admin
+   ```
+
+3. Visit `http://localhost:8080`
+
+### Releasing
+
+1. Build the frontend:
+
+   ```bash
+   cd frontend
+   npm run build
+   ```
+
+2. Generate the embedded frontend golang code:
+
+   ```bash
+   go generate ./...
+   ```
+
+3. Build the backend:
+
+   ```bash
+   go build -o static-admin main.go
+   ```
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.

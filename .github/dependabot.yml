@@ -1,24 +1,33 @@
+---
 version: 2
 updates:
-  # Go dependencies
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 10
 
-  # Node.js dependencies
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 10
     groups:
-      # Group all shadcn/ui component updates together
       shadcn:
         patterns:
           - "@/components/ui/*"
-      # Group all editorjs updates together
       editorjs:
         patterns:
-          - "@editorjs/*" 
+          - "@editorjs/*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10

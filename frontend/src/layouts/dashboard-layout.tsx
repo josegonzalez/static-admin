@@ -62,7 +62,7 @@ export default function DashboardLayout({
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
-                      <a>Posts</a>
+                      <Link href="#">Posts</Link>
                     </SidebarMenuButton>
                     {sites.map((site) => (
                       <SidebarMenuSub key={site.id}>

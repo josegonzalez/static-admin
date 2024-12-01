@@ -6,8 +6,8 @@ require (
 	github.com/JohannesKaufmann/html-to-markdown/v2 v2.2.1
 	github.com/PuerkitoBio/goquery v1.10.0
 	github.com/chasefleming/elem-go v0.30.0
+	github.com/foolin/goview v0.3.0
 	github.com/gin-contrib/cors v1.7.2
-	github.com/gin-contrib/sessions v1.0.1
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/glog v1.2.3
