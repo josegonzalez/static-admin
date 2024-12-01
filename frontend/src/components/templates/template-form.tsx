@@ -102,7 +102,9 @@ export const DEFAULT_FIELDS: FrontmatterField[] = [
 
 interface DefaultValueInputProps {
   type: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   value: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onChange: (value: any) => void;
   disabled?: boolean;
 }
@@ -145,6 +147,7 @@ function DefaultValueInput({
       return (
         <DateTimePicker
           value={value ? new Date(value) : undefined}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onChange={(date: any) => onChange(date?.toISOString())}
           disabled={disabled}
         />
@@ -153,7 +156,9 @@ function DefaultValueInput({
       return (
         <MultipleSelector
           value={(value || []).map((v: string) => ({ value: v, label: v }))}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onChange={(selected: any) =>
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onChange(selected.map((s: any) => s.value))
           }
           creatable
@@ -166,7 +171,11 @@ function DefaultValueInput({
 }
 
 interface NewFieldRowProps {
-  onAdd: (name: string, type: string, value: any) => boolean;
+  onAdd: (
+    name: string,
+    type: string,
+    value: string | number | boolean | string[],
+  ) => boolean;
   isAdding: boolean;
   setIsAdding: (isAdding: boolean) => void;
 }
@@ -174,7 +183,9 @@ interface NewFieldRowProps {
 function NewFieldRow({ onAdd, isAdding, setIsAdding }: NewFieldRowProps) {
   const [name, setName] = useState("");
   const [type, setType] = useState("");
-  const [defaultValue, setDefaultValue] = useState<any>("");
+  const [defaultValue, setDefaultValue] = useState<
+    string | number | boolean | string[]
+  >("");
 
   const handleSave = () => {
     if (!name || !type) return;
@@ -479,13 +490,17 @@ export function TemplateForm({
   onCancel,
   saveButtonText,
 }: TemplateFormProps) {
-  const handleAddField = (name: string, type: string, value: any) => {
+  const handleAddField = (
+    name: string,
+    type: string,
+    value: string | number | boolean | string[],
+  ) => {
     if (fields.some((f) => f.name === name)) {
       setError("A field with this name already exists");
       return false;
     }
 
-    let field: FrontmatterField = {
+    const field: FrontmatterField = {
       name,
       type,
       stringValue: "",
@@ -497,19 +512,29 @@ export function TemplateForm({
 
     switch (type) {
       case "string":
-        field.stringValue = value;
+        if (typeof value === "string") {
+          field.stringValue = value;
+        }
         break;
       case "bool":
-        field.boolValue = value;
+        if (typeof value === "boolean") {
+          field.boolValue = value;
+        }
         break;
       case "number":
-        field.numberValue = value;
+        if (typeof value === "number") {
+          field.numberValue = value;
+        }
         break;
       case "dateTime":
-        field.dateTimeValue = value;
+        if (typeof value === "string") {
+          field.dateTimeValue = value;
+        }
         break;
       case "stringSlice":
-        field.stringSliceValue = value;
+        if (Array.isArray(value)) {
+          field.stringSliceValue = value;
+        }
         break;
       default:
         throw new Error(`Unknown field type: ${type}`);

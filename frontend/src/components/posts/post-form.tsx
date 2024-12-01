@@ -31,10 +31,8 @@ export function PostForm({
 }: PostFormProps) {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
-  const [blocks, setBlocks] = useState<OutputBlockData[]>(post.blocks);
-  const [initialBlockState, setInitialBlockState] = useState<OutputBlockData[]>(
-    post.blocks,
-  );
+  const [blocks] = useState<OutputBlockData[]>(post.blocks);
+  const [initialBlockState] = useState<OutputBlockData[]>(post.blocks);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [stringSliceValues, setStringSliceValues] = useState<
     Record<string, string[]>
@@ -48,12 +46,7 @@ export function PostForm({
     return values;
   });
 
-  const {
-    register,
-    handleSubmit: handleSubmitForm,
-    setValue,
-    formState: { errors },
-  } = useForm();
+  const { register, handleSubmit: handleSubmitForm, setValue } = useForm();
 
   const handleSubmit = async (
     data: FieldValues,
