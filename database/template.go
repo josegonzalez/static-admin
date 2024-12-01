@@ -19,7 +19,7 @@ type TemplateField struct {
 	StringValue      string           `gorm:"not null;default:''"`
 	BoolValue        bool             `gorm:"not null;default:false"`
 	NumberValue      float64          `gorm:"not null;default:0"`
-	DateTimeValue    time.Time        `gorm:"not null;default:0000-00-00 00:00:00"`
+	DateTimeValue    time.Time        `gorm:"not null;default:'0000-00-00 00:00:00'"`
 	StringSliceValue StringSliceValue `gorm:"not null;default:'[]';serializer:json"`
 	Type             string           `gorm:"not null;default:'string';check:type IN ('string', 'bool', 'number', 'dateTime', 'stringSlice')"`
 }

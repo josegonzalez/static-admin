@@ -129,9 +129,9 @@ func main() {
 	registry.ApiRegister(api_handlers.NewSavePostHandler(config))
 	registry.ApiRegister(api_handlers.NewTemplatesHandler(config))
 	registry.ApiRegister(api_handlers.NewTemplateHandler(config))
-	registry.ApiRegister(api_handlers.NewCreateTemplateHandler(config))
-	registry.ApiRegister(api_handlers.NewUpdateTemplateHandler(config))
-	registry.ApiRegister(api_handlers.NewDeleteTemplateHandler(config))
+	registry.ApiRegister(api_handlers.NewTemplateCreateHandler(config))
+	registry.ApiRegister(api_handlers.NewTemplateUpdateHandler(config))
+	registry.ApiRegister(api_handlers.NewTemplateDeleteHandler(config))
 
 	server := &http.Server{
 		Addr:    ":8080",

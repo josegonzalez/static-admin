@@ -51,10 +51,12 @@ func (h TemplatesHandler) handler(c *gin.Context) {
 	// Fetch templates for user
 	var templates []database.Template
 	if err := h.Database.Where("user_id = ?", user.ID).Find(&templates).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to fetch templates",
-		})
-		return
+		if err != gorm.ErrRecordNotFound {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to fetch templates",
+			})
+			return
+		}
 	}
 
 	// Convert to response format
