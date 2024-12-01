@@ -14,8 +14,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// generatePostID creates a base62-encoded hash of the file path
-func generatePostID(path string) string {
+// toBase62 creates a base62-encoded hash of the file path
+func toBase62(path string) string {
 	return base62.EncodeToString([]byte(path))
 }
 
@@ -115,7 +115,7 @@ func (h PostsHandler) handler(c *gin.Context) {
 	response := make([]PostResponse, len(files))
 	for i, file := range files {
 		response[i] = PostResponse{
-			ID:   generatePostID(file.Path),
+			ID:   toBase62(file.Path),
 			Path: file.Path,
 		}
 	}

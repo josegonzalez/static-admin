@@ -119,14 +119,19 @@ func main() {
 	registry.ApiRegister(api_handlers.NewCreateAccountHandler(config))
 	registry.ApiRegister(api_handlers.NewGitHubAuthURLHandler(config))
 	registry.ApiRegister(api_handlers.NewRevalidateHandler(config))
+	registry.ApiRegister(api_handlers.NewGitHubRepositoriesHandler(config))
 	registry.ApiRegister(api_handlers.NewGitHubOrganizationsHandler(config))
 	registry.ApiRegister(api_handlers.NewSitesHandler(config))
-	registry.ApiRegister(api_handlers.NewDeleteSiteHandler(config))
-	registry.ApiRegister(api_handlers.NewCreateSiteHandler(config))
-	registry.ApiRegister(api_handlers.NewGitHubRepositoriesHandler(config))
+	registry.ApiRegister(api_handlers.NewSiteCreateHandler(config))
+	registry.ApiRegister(api_handlers.NewSiteDeleteHandler(config))
 	registry.ApiRegister(api_handlers.NewPostsHandler(config))
 	registry.ApiRegister(api_handlers.NewPostHandler(config))
-	registry.ApiRegister(api_handlers.NewSavePostHandler(config))
+	registry.ApiRegister(api_handlers.NewPostSaveHandler(config))
+	registry.ApiRegister(api_handlers.NewTemplatesHandler(config))
+	registry.ApiRegister(api_handlers.NewTemplateHandler(config))
+	registry.ApiRegister(api_handlers.NewTemplateCreateHandler(config))
+	registry.ApiRegister(api_handlers.NewTemplateUpdateHandler(config))
+	registry.ApiRegister(api_handlers.NewTemplateDeleteHandler(config))
 
 	server := &http.Server{
 		Addr:    ":8080",

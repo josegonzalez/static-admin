@@ -1,6 +1,8 @@
+import { FrontmatterField } from "@/types/frontmatter";
 import { Post } from "@/types/post";
 import { SavePostResponse } from "@/types/save-post-response";
 import { Site } from "@/types/site";
+import { Template } from "@/types/template";
 
 const API_BASE = "http://localhost:8080";
 
@@ -156,8 +158,15 @@ export async function savePost(
   postId: string,
   post: Post,
 ): Promise<SavePostResponse> {
-  const response = await fetchWithAuth(`/api/sites/${siteId}/posts/${postId}`, {
-    method: "POST",
+  let url = `/api/sites/${siteId}/posts/${postId}`;
+  let method = "POST";
+  if (postId === "new") {
+    url = `/api/sites/${siteId}/posts`;
+    method = "PUT";
+  }
+
+  const response = await fetchWithAuth(url, {
+    method: method,
     headers: {
       "Content-Type": "application/json",
     },
@@ -168,4 +177,64 @@ export async function savePost(
     throw new Error("Failed to save post");
   }
   return response.json();
+}
+
+export async function getTemplates(): Promise<Template[]> {
+  const response = await fetchWithAuth("/api/templates");
+  return response.json();
+}
+
+export async function deleteTemplate(id: number): Promise<void> {
+  const response = await fetchWithAuth(`/api/templates/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to delete template");
+  }
+}
+
+export async function createTemplate(template: {
+  name: string;
+  fields: FrontmatterField[];
+}): Promise<void> {
+  const response = await fetchWithAuth("/api/templates", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(template),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to create template");
+  }
+}
+
+export async function getTemplate(id: string): Promise<{
+  name: string;
+  fields: FrontmatterField[];
+}> {
+  const response = await fetchWithAuth(`/api/templates/${id}`);
+  return response.json();
+}
+
+export async function updateTemplate(
+  id: string,
+  template: {
+    name: string;
+    fields: FrontmatterField[];
+  },
+): Promise<void> {
+  const response = await fetchWithAuth(`/api/templates/${id}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(template),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update template");
+  }
 }

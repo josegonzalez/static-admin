@@ -20,6 +20,11 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* todo: remove this once we have a proper theme */
+.bg-background {
+  background-color: white
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

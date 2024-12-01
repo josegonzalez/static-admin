@@ -7,3 +7,13 @@ export interface FrontmatterField {
   stringSliceValue: string[];
   type: string;
 }
+
+export const DefaultFrontmatterFieldValues: FrontmatterField = {
+  name: "",
+  stringValue: "",
+  boolValue: false,
+  numberValue: 0,
+  dateTimeValue: "0001-01-01T00:00:00Z",
+  stringSliceValue: [],
+  type: "",
+};

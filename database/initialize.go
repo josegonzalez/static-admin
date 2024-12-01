@@ -19,6 +19,8 @@ func Initialize() (*gorm.DB, error) {
 		&User{},
 		&GitHubAuth{},
 		&Site{},
+		&Template{},
+		&TemplateField{},
 	}
 
 	// AutoMigrate the schema

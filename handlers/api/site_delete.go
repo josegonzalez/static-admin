@@ -10,22 +10,22 @@ import (
 	"gorm.io/gorm"
 )
 
-// NewDeleteSiteHandler creates a new handler for the site deletion endpoint
-func NewDeleteSiteHandler(config config.Config) (DeleteSiteHandler, error) {
-	return DeleteSiteHandler{
+// NewSiteDeleteHandler creates a new handler for the site deletion endpoint
+func NewSiteDeleteHandler(config config.Config) (SiteDeleteHandler, error) {
+	return SiteDeleteHandler{
 		Database:  config.Database,
 		JWTSecret: []byte(config.JWTSecret),
 	}, nil
 }
 
-// DeleteSiteHandler handles the site deletion request
-type DeleteSiteHandler struct {
+// SiteDeleteHandler handles the site deletion request
+type SiteDeleteHandler struct {
 	Database  *gorm.DB
 	JWTSecret []byte
 }
 
 // GroupRegister registers the handler with the given router group
-func (h DeleteSiteHandler) GroupRegister(r *gin.RouterGroup) {
+func (h SiteDeleteHandler) GroupRegister(r *gin.RouterGroup) {
 	r.DELETE("/sites/:siteId", h.handler)
 	r.OPTIONS("/sites/:siteId", func(c *gin.Context) {
 		c.Status(http.StatusNoContent)
@@ -33,7 +33,7 @@ func (h DeleteSiteHandler) GroupRegister(r *gin.RouterGroup) {
 }
 
 // handler handles the DELETE request for site deletion
-func (h DeleteSiteHandler) handler(c *gin.Context) {
+func (h SiteDeleteHandler) handler(c *gin.Context) {
 	user, exists := middleware.GetUser(c)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{

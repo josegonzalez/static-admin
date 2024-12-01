@@ -1,3 +1,4 @@
+import { TemplateSelectModal } from "@/components/posts/template-select-modal";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,7 @@ import DashboardLayout from "@/layouts/dashboard-layout";
 import { getPosts } from "@/lib/api";
 import { formatPostId } from "@/lib/format";
 import { Post } from "@/types/post";
+import { PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
@@ -28,6 +30,7 @@ export default function PostsPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [templateModalOpen, setTemplateModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -61,7 +64,20 @@ export default function PostsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Posts for {siteName}</h1>
+        <Button onClick={() => setTemplateModalOpen(true)}>
+          <PlusIcon className="mr-2 h-4 w-4" />
+          New Post
+        </Button>
       </div>
+
+      {typeof siteId === "string" && typeof siteName === "string" && (
+        <TemplateSelectModal
+          open={templateModalOpen}
+          onOpenChange={setTemplateModalOpen}
+          siteId={siteId}
+          siteName={siteName}
+        />
+      )}
 
       <div className="rounded-md border">
         <Table>

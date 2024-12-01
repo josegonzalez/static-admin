@@ -11,50 +11,52 @@ import (
 	"static-admin/markdown"
 	"static-admin/middleware"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gosimple/slug"
 	"gorm.io/gorm"
 )
 
-// SavePostRequest represents the JSON request for saving a post's content
-type SavePostRequest struct {
+// PostSaveRequest represents the JSON request for saving a post's content
+type PostSaveRequest struct {
 	ID          string                      `json:"id"`
 	Path        string                      `json:"path"`
 	Frontmatter []markdown.FrontmatterField `json:"frontmatter"`
 	Blocks      []blocks.Block              `json:"blocks"`
 }
 
-// SavePostResponse represents the JSON response for saving a post's content
-type SavePostResponse struct {
+// PostSaveResponse represents the JSON response for saving a post's content
+type PostSaveResponse struct {
 	Message  string          `json:"message"`
-	Request  SavePostRequest `json:"content"`
+	Request  PostSaveRequest `json:"content"`
 	Path     string          `json:"path"`
 	Markdown string          `json:"markdown"`
 	PRURL    string          `json:"pr_url"`
 }
 
-// NewSavePostHandler creates a new handler for saving post content
-func NewSavePostHandler(config config.Config) (SavePostHandler, error) {
-	return SavePostHandler{
+// NewPostSaveHandler creates a new handler for saving post content
+func NewPostSaveHandler(config config.Config) (PostSaveHandler, error) {
+	return PostSaveHandler{
 		Database:  config.Database,
 		JWTSecret: []byte(config.JWTSecret),
 	}, nil
 }
 
-// SavePostHandler handles the save post request
-type SavePostHandler struct {
+// PostSaveHandler handles the save post request
+type PostSaveHandler struct {
 	Database  *gorm.DB
 	JWTSecret []byte
 }
 
 // GroupRegister registers the handler with the given router group
-func (h SavePostHandler) GroupRegister(r *gin.RouterGroup) {
+func (h PostSaveHandler) GroupRegister(r *gin.RouterGroup) {
 	r.POST("/sites/:siteId/posts/:postId", h.handler)
+	r.PUT("/sites/:siteId/posts", h.handler)
 }
 
 // handler handles the POST request for saving post content
-func (h SavePostHandler) handler(c *gin.Context) {
+func (h PostSaveHandler) handler(c *gin.Context) {
 	user, exists := middleware.GetUser(c)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -84,12 +86,47 @@ func (h SavePostHandler) handler(c *gin.Context) {
 	}
 
 	// Parse request body
-	var req SavePostRequest
+	var req PostSaveRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		fmt.Println("error", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid request format",
 		})
 		return
+	}
+
+	if c.Request.Method == "PUT" {
+		// generate the path as a slug version of the post date and title
+		// make sure to get the date from the frontmatter
+		var date time.Time
+		foundDate := false
+		for _, field := range req.Frontmatter {
+			if field.Name == "date" {
+				date = field.DateTimeValue
+				foundDate = true
+				break
+			}
+		}
+
+		var title string
+		foundTitle := false
+		for _, field := range req.Frontmatter {
+			if field.Name == "title" {
+				title = field.StringValue
+				foundTitle = true
+				break
+			}
+		}
+
+		if !foundDate || !foundTitle {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Date or title not found in frontmatter",
+			})
+			return
+		}
+
+		req.Path = fmt.Sprintf("%s-%s.md", date.Format("2006-01-02"), slug.Make(title))
+		req.ID = toBase62(req.Path)
 	}
 
 	// decode the id into a path
@@ -101,8 +138,21 @@ func (h SavePostHandler) handler(c *gin.Context) {
 		return
 	}
 
+	// filter out the permalink field if the value is empty
+	fields := req.Frontmatter
+	permalinkIndex := -1
+	for i, field := range fields {
+		if field.Name == "permalink" {
+			permalinkIndex = i
+			break
+		}
+	}
+	if permalinkIndex != -1 {
+		fields = append(fields[:permalinkIndex], fields[permalinkIndex+1:]...)
+	}
+
 	// Generate markdown content
-	frontmatterYaml, err := markdown.FrontmatterFieldToYaml(req.Frontmatter)
+	frontmatterYaml, err := markdown.FrontmatterFieldToYaml(fields)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to generate frontmatter",
@@ -133,6 +183,9 @@ func (h SavePostHandler) handler(c *gin.Context) {
 
 	fileName := filepath.Base(path)
 	branchName := fmt.Sprintf("update-%s", slug.Make(fileName))
+	if c.Request.Method == "PUT" {
+		branchName = fmt.Sprintf("create-%s", slug.Make(fileName))
+	}
 
 	err = github.CreateBranchAndUpdateFile(github.CreateBranchAndUpdateFileInput{
 		Owner:      owner,
@@ -167,7 +220,7 @@ func (h SavePostHandler) handler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, SavePostResponse{
+	c.JSON(http.StatusOK, PostSaveResponse{
 		Message:  "Created pull request for changes",
 		Request:  req,
 		Path:     path,
