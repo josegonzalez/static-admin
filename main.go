@@ -126,7 +126,7 @@ func main() {
 	registry.ApiRegister(api_handlers.NewSiteDeleteHandler(config))
 	registry.ApiRegister(api_handlers.NewPostsHandler(config))
 	registry.ApiRegister(api_handlers.NewPostHandler(config))
-	registry.ApiRegister(api_handlers.NewSavePostHandler(config))
+	registry.ApiRegister(api_handlers.NewPostSaveHandler(config))
 	registry.ApiRegister(api_handlers.NewTemplatesHandler(config))
 	registry.ApiRegister(api_handlers.NewTemplateHandler(config))
 	registry.ApiRegister(api_handlers.NewTemplateCreateHandler(config))

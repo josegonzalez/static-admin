@@ -18,45 +18,45 @@ import (
 	"gorm.io/gorm"
 )
 
-// SavePostRequest represents the JSON request for saving a post's content
-type SavePostRequest struct {
+// PostSaveRequest represents the JSON request for saving a post's content
+type PostSaveRequest struct {
 	ID          string                      `json:"id"`
 	Path        string                      `json:"path"`
 	Frontmatter []markdown.FrontmatterField `json:"frontmatter"`
 	Blocks      []blocks.Block              `json:"blocks"`
 }
 
-// SavePostResponse represents the JSON response for saving a post's content
-type SavePostResponse struct {
+// PostSaveResponse represents the JSON response for saving a post's content
+type PostSaveResponse struct {
 	Message  string          `json:"message"`
-	Request  SavePostRequest `json:"content"`
+	Request  PostSaveRequest `json:"content"`
 	Path     string          `json:"path"`
 	Markdown string          `json:"markdown"`
 	PRURL    string          `json:"pr_url"`
 }
 
-// NewSavePostHandler creates a new handler for saving post content
-func NewSavePostHandler(config config.Config) (SavePostHandler, error) {
-	return SavePostHandler{
+// NewPostSaveHandler creates a new handler for saving post content
+func NewPostSaveHandler(config config.Config) (PostSaveHandler, error) {
+	return PostSaveHandler{
 		Database:  config.Database,
 		JWTSecret: []byte(config.JWTSecret),
 	}, nil
 }
 
-// SavePostHandler handles the save post request
-type SavePostHandler struct {
+// PostSaveHandler handles the save post request
+type PostSaveHandler struct {
 	Database  *gorm.DB
 	JWTSecret []byte
 }
 
 // GroupRegister registers the handler with the given router group
-func (h SavePostHandler) GroupRegister(r *gin.RouterGroup) {
+func (h PostSaveHandler) GroupRegister(r *gin.RouterGroup) {
 	r.POST("/sites/:siteId/posts/:postId", h.handler)
-	r.PUT("/sites/:siteId/posts/:postId", h.handler)
+	r.PUT("/sites/:siteId/posts", h.handler)
 }
 
 // handler handles the POST request for saving post content
-func (h SavePostHandler) handler(c *gin.Context) {
+func (h PostSaveHandler) handler(c *gin.Context) {
 	user, exists := middleware.GetUser(c)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -86,7 +86,7 @@ func (h SavePostHandler) handler(c *gin.Context) {
 	}
 
 	// Parse request body
-	var req SavePostRequest
+	var req PostSaveRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid request format",
@@ -206,7 +206,7 @@ func (h SavePostHandler) handler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, SavePostResponse{
+	c.JSON(http.StatusOK, PostSaveResponse{
 		Message:  "Created pull request for changes",
 		Request:  req,
 		Path:     path,
