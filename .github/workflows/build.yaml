@@ -44,6 +44,9 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
+      - name: Generate a stub embedded frontend
+        run: go generate ./...
+
       - name: Build backend
         run: go build -v ./...
 
