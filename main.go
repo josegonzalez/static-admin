@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -111,7 +112,7 @@ func main() {
 		// for testing purposes
 		AllowOrigins: []string{
 			"http://localhost:3000",
-			"http://localhost:8080",
+			"http://localhost:" + strconv.Itoa(config.Port),
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
@@ -154,7 +155,7 @@ func main() {
 	registry.ApiRegister(api_handlers.NewTemplateDeleteHandler(config))
 
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + strconv.Itoa(config.Port),
 		Handler: r,
 	}
 	go func() {
@@ -162,7 +163,7 @@ func main() {
 			log.Fatalf("Server failed: %v", err)
 		}
 	}()
-	log.Println("Server started on :8080")
+	log.Println("Server started on :" + strconv.Itoa(config.Port))
 
 	// Signal handling for graceful shutdown
 	sigChan := make(chan os.Signal, 1)
