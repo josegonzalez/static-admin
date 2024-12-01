@@ -45,7 +45,10 @@ jobs:
         run: go mod download
 
       - name: Generate a stub embedded frontend
-        run: go generate ./...
+        run: |
+          mkdir -p frontend/out
+          touch frontend/out/.gitignore
+          go generate ./...
 
       - name: Build backend
         run: go build -v ./...
