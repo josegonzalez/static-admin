@@ -13,11 +13,15 @@ import (
 
 	"static-admin/config"
 	"static-admin/database"
+	"static-admin/embedded_box/frontend"
 	"static-admin/github"
+	"static-admin/handlers"
 	api_handlers "static-admin/handlers/api"
 	auth_handlers "static-admin/handlers/auth"
 	"static-admin/middleware"
 
+	"github.com/foolin/goview"
+	"github.com/foolin/goview/supports/ginview"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -63,6 +67,19 @@ func (r *Registry) AuthRegister(handler AuthHandler, err error) {
 	handler.GroupRegister(r.AuthGroup)
 }
 
+func GetManagerBoxEngine() *goview.ViewEngine {
+	config := goview.DefaultConfig
+	config.Root = frontend.Box.Root()
+	config.Extension = ""
+	config.Partials = frontend.Box.Partials()
+	config.Delims = frontend.Box.Delims()
+	config.Master = ""
+	config.Funcs = template.FuncMap{}
+	engine := goview.New(config)
+	engine.SetFileHandler(frontend.Box.GoviewFileHandler())
+	return engine
+}
+
 func main() {
 	// Initialize the database
 	db, err := database.Initialize()
@@ -86,13 +103,16 @@ func main() {
 
 	r.SetHTMLTemplate(template.Must(template.ParseFS(staticFiles, "assets/*.html")))
 	r.StaticFS("/static", http.FS(staticFiles))
+	r.HTMLRender = ginview.Wrap(GetManagerBoxEngine())
+	r.NoRoute(handlers.Index)
 
 	apiUnauthenticated := r.Group("/api")
 	apiUnauthenticated.Use(cors.New(cors.Config{
+		// for testing purposes
 		AllowOrigins: []string{
 			"http://localhost:3000",
 			"http://localhost:8080",
-		}, // Frontend URL
+		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},

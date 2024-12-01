@@ -72,6 +72,27 @@ A modern web interface for managing static site content. Built for GitHub Pages 
 
 3. Visit `http://localhost:3000`
 
+### Releasing
+
+1. Build the frontend:
+
+   ```bash
+   cd frontend
+   npm run build
+   ```
+
+2. Generate the embedded frontend golang code:
+
+   ```bash
+   go generate ./...
+   ```
+
+3. Build the backend:
+
+   ```bash
+   go build -o static-admin main.go
+   ```
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
