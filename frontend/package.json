@@ -25,7 +25,7 @@
     "@editorjs/list": "^2.0.2",
     "@editorjs/quote": "^2.7.4",
     "@editorjs/raw": "^2.5.0",
-    "@editorjs/table": "^2.4.2",
+    "@editorjs/table": "^2.4.3",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-alert-dialog": "^1.1.2",
     "@radix-ui/react-checkbox": "^1.1.2",
