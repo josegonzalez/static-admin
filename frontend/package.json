@@ -20,7 +20,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@editorjs/editorjs": "^2.30.8",
     "@editorjs/header": "^2.8.8",
-    "@editorjs/image": "^2.10.1",
+    "@editorjs/image": "^2.10.2",
     "@editorjs/inline-code": "^1.5.1",
     "@editorjs/list": "^2.0.4",
     "@editorjs/quote": "^2.7.6",
