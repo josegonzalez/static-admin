@@ -41,7 +41,7 @@
     "@types/lodash.debounce": "^4.0.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "cmdk": "^1.0.4",
+    "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "editorjs-alert": "^1.1.4",
     "jwt-decode": "^4.0.0",
