@@ -120,7 +120,7 @@ jobs:
         run: go mod download
 
       - name: Download frontend artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: frontend
           path: frontend/out
@@ -148,7 +148,7 @@ jobs:
     needs: [build-all, build-docker]
     steps:
       - name: Download binary artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: static-admin
           path: static-admin
