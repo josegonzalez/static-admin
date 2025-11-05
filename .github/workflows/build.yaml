@@ -85,7 +85,7 @@ jobs:
 
       - name: Generate docker metadata
         id: docker_meta
-        uses: docker/metadata-action@v5.8.0
+        uses: docker/metadata-action@v5.9.0
         with:
           images: josegonzalez/static-admin
 
