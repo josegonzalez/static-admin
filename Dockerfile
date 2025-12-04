@@ -18,7 +18,7 @@ RUN go generate ./...
 RUN CGO_ENABLED=0 GOOS=linux go build -o /static-admin
 
 # Stage 3: Final stage
-FROM alpine:3.22
+FROM alpine:3.23
 WORKDIR /app
 COPY --from=backend-builder /static-admin .
 ENV GIN_MODE=release
