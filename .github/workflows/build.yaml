@@ -43,7 +43,7 @@ jobs:
         run: npm run build
 
       - name: Upload frontend as artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: frontend
           path: frontend/out
@@ -73,7 +73,7 @@ jobs:
         run: go build -o static-admin
 
       - name: Upload backend as artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: static-admin-api
           path: static-admin
@@ -138,7 +138,7 @@ jobs:
         run: go build -o static-admin
 
       - name: Upload binary as artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: static-admin
           path: static-admin
