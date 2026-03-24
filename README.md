@@ -120,3 +120,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 MIT License - see [LICENSE.md](LICENSE.md) for details
+
+## Links
+
+[![Hypercommit](https://img.shields.io/badge/Hypercommit-DB2475)](https://hypercommit.com/static-admin)
