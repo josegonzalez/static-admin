@@ -10,7 +10,7 @@ import (
 	"static-admin/middleware"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/golang/glog"
 	"github.com/google/go-github/github"
 	"gorm.io/gorm"
@@ -48,7 +48,7 @@ func (h GithubCallbackHandler) handler(c *gin.Context) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return h.JWTSecret, nil
 	})
-	if err != nil || !token.Valid {
+	if err != nil {
 		c.Redirect(http.StatusFound, "/login")
 		return
 	}
