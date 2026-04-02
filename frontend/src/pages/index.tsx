@@ -56,7 +56,7 @@ export default function Page() {
               </Button>
             </nav>
           </header>
-          <div className="bg-white">
+          <div className="bg-white dark:bg-background">
             <div className="mx-auto max-w-7xl pb-8 sm:px-6 lg:px-8">
               <div className="relative isolate overflow-hidden bg-gray-900 px-6 py-24 text-center shadow-2xl sm:rounded-3xl sm:px-16">
                 <h2 className="text-balance text-4xl font-semibold tracking-tight text-white sm:text-5xl">
@@ -97,20 +97,20 @@ export default function Page() {
             </div>
           </div>
 
-          <div className="bg-white">
+          <div className="bg-white dark:bg-background">
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
               <div className="mx-auto max-w-2xl lg:max-w-none">
                 <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
                   {features.map((feature) => (
                     <div key={feature.name} className="flex flex-col">
-                      <dt className="flex items-center gap-x-3 text-base/7 font-semibold text-gray-900">
+                      <dt className="flex items-center gap-x-3 text-base/7 font-semibold text-gray-900 dark:text-white">
                         <feature.icon
                           aria-hidden="true"
                           className="size-5 flex-none text-indigo-600"
                         />
                         {feature.name}
                       </dt>
-                      <dd className="mt-4 flex flex-auto flex-col text-base/7 text-gray-600">
+                      <dd className="mt-4 flex flex-auto flex-col text-base/7 text-gray-600 dark:text-gray-400">
                         <p className="flex-auto">{feature.description}</p>
                         {feature.href && feature.href !== "#" && (
                           <p className="mt-6">
