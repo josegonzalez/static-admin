@@ -14,8 +14,8 @@ A modern web interface for managing static site content. Built for GitHub Pages 
 
 ### Requirements
 
-- Go 1.23+
-- Node.js 18+
+- Go 1.25+
+- Node.js 22+
 
 ### Setup
 
