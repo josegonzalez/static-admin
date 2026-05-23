@@ -1,5 +1,4 @@
 import { Button, buttonVariants } from "@/components/ui/button";
-import type { CalendarProps } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
@@ -25,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DayPicker } from "react-day-picker";
+import { DayPicker, type DayPickerProps } from "react-day-picker";
 
 // ---------- utils start ----------
 /**
@@ -254,7 +253,7 @@ function Calendar({
   showOutsideDays = true,
   yearRange = 50,
   ...props
-}: CalendarProps & { yearRange?: number }) {
+}: DayPickerProps & { yearRange?: number }) {
   const MONTHS = React.useMemo(() => {
     let locale: Pick<Locale, "options" | "localize" | "formatLong"> = enUS;
     const { options, localize, formatLong } = props.locale || {};
@@ -716,7 +715,7 @@ type DateTimePickerProps = {
    **/
   defaultPopupValue?: Date;
 } & Pick<
-  CalendarProps,
+  DayPickerProps,
   "locale" | "weekStartsOn" | "showWeekNumber" | "showOutsideDays"
 >;
 
