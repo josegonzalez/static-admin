@@ -107,7 +107,6 @@ export function EditorComponent({ blocks, onChange }: EditorProps) {
   // This will run only once
   useEffect(() => {
     if (!isReady.current) {
-      // @ts-expect-error: certain tools are not typed
       editorRef.current = new EditorJS(editorConfig as EditorConfig);
       isReady.current = true;
     }
