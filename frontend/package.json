@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "engines": {
-    "node": "22.11.0"
+    "node": "26"
   },
   "dependencies": {
     "@calumk/editorjs-codecup": "^1.3.0",
